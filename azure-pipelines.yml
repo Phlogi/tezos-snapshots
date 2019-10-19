@@ -139,7 +139,7 @@ jobs:
     - script: sudo apt-get update && sudo apt-get remove -y --purge man-db && sudo apt-get install -yy -qq jq dnsutils libev-dev libgmp-dev libhidapi-dev
       displayName: Install packages
     - script: |
-        curl $(rolling_snapshot_url) -o $(snapshotFileName).xz
+        curl $(rollingSnapshotUrl) -o $(snapshotFileName).xz
       displayName: Download snapshot
 
     - script: |
