@@ -1,0 +1,310 @@
+trigger:
+- master
+
+schedules:
+- cron: "30 6 * * *"
+  displayName: Daily midnight build
+  branches:
+    include:
+    - master
+  always: true
+
+variables:
+  vmImageName: 'ubuntu-18.04'
+
+pool:
+  vmImage: 'ubuntu-18.04'
+
+#container:
+#    image: ubuntu:latest
+    # options: "--name ci-container -v /usr/bin/docker:/tmp/docker:ro"
+# fix for sudo
+#  steps:
+#    - script: |
+#        /tmp/docker exec -t -u 0 ci-container \
+#        sh -c "apt-get update && DEBIAN_FRONTEND=noninteractive apt-get -o Dpkg::Options::="--force-confold" -y install sudo"
+#      displayName: Set up sudo
+
+jobs:
+### TEST JOB ###
+  - job: Test
+    displayName: Test job only
+    condition: false
+    steps: 
+    # - checkout: none
+    - script: |
+        echo \"foo\" | tr -d '"'
+        echo $(Agent.Name)
+        echo $(Agent.HomeDirectory)
+        echo $(Agent.BuildDirectory)
+        ls -la /home/vsts
+        env | grep PATH
+        env | grep HOME
+        bash scripts/addpeers_2.0.sh
+        free -m
+        mkdir ./ramdisk
+        # sudo mount -t tmpfs -o rw,size=2G tmpfs ./ramdisk
+        # sudo chmod 777 ./ramdisk
+        # sudo find /lib/modules/$(uname -r) -type f -name '*.ko'
+        # sudo find /lib/modules/$(uname -r) -type f -name '*.ko*'
+        # sudo depmod -av|grep f2fs
+        uname -r
+      displayName: Test commands
+
+
+### JOB ###
+  - job: Build
+    displayName: Build and publish tezos binaries
+    condition: and(always(), eq(variables['Build.Reason'], 'Schedule'))
+    variables:
+      tezosLastCommit: unknown
+      tezosLastCommitStamp: unknown
+      recentCommitUpdate: false
+    steps:
+    - checkout: none
+
+    - task: PowerShell@2
+      displayName: Set date time stamp variable
+      inputs:
+        targetType: 'inline'
+        script: |
+          $Time = Get-Date
+          $Time = $Time.ToUniversalTime()
+          $date = $Time.ToString("yyyy-MM-dd HH:mmK")
+          Write-Host "##vso[task.setvariable variable=datetimestamp]$date"
+          $UnixStamp = Get-Date -UFormat %s
+          Write-Host "##vso[task.setvariable variable=unixdatetimestamp]$UnixStamp"
+        errorActionPreference: 'continue'
+
+    - script: sudo add-apt-repository ppa:avsm/ppa && sudo apt-get update && sudo apt-get remove -y --purge man-db && sudo apt-get install -yy -qq opam rsync m4 build-essential patch unzip bubblewrap wget libev-dev libgmp-dev libhidapi-dev m4 perl pkg-config
+      displayName: Install opam and dependencies
+
+    - script: |
+        opam init --bare -n
+        eval $(opam env)
+        git clone -b $(gitCheckoutBranch) --depth 1 $(gitCloneUrl)
+        cd tezos
+        commit_id=$(git log --format="%h" -n 1) && echo $commit_id
+        stamp=$(git log -1 --format=%cd -n 1) && echo $stamp
+        unix_git_stamp=$(git log -1 --format=%ct -n 1)
+        echo "##vso[task.setvariable variable=tezosLastCommit]$commit_id"
+        echo "##vso[task.setvariable variable=tezosLastCommitStamp]$stamp"
+        current_unix_stamp=$(date +"%s")
+        need_update=false
+        if (( current_unix_stamp-unix_git_stamp < 86400 )); then need_update=true && echo "found recent commit, shall build"; fi
+        echo "##vso[task.setvariable variable=recentCommitUpdate]$need_update"
+      displayName: Checkout tezos
+# note: variables are not available immediately within the same script block after being set with task.setvariable
+
+    - script: |
+        cd tezos && ls -la && make build-deps && eval $(opam env) && make && ls -lah tezos-* && mkdir ../bin && mv -v tezos-* ../bin/
+      displayName: Build tezos
+      condition: eq(variables['recentCommitUpdate'], true)
+
+    - publish: '$(System.DefaultWorkingDirectory)/bin/'
+      artifact: tezos-binaries
+      displayName: Publish tezos binaries
+      condition: eq(variables['recentCommitUpdate'], true)
+
+
+    - task: UniversalPackages@0
+      displayName: Publish tezos binaries as universal package
+      condition: eq(variables['recentCommitUpdate'], true)
+      inputs:
+        command: publish
+        publishDirectory: '$(System.DefaultWorkingDirectory)/bin/'
+        vstsFeedPublish: 'tezos-binaries'
+        vstsFeedPackagePublish: 'tezos-binaries-ubuntu-azure'
+        packagePublishDescription: 'Tezos binaries [$(tezosLastCommitStamp) / $(tezosLastCommit)] built on $(datetimestamp) within Azure Pipeline running on $(vmImageName).'
+
+    - script: |
+        docker pull tezos/tezos
+        docker create -ti --name tz tezos/tezos:mainnet
+        mkdir ./bin && pwd
+        docker cp tz:/usr/local/bin/tezos-node ./bin/
+        ls bin -la
+        docker rm -f tz
+      displayName: Get tezos-node binary from container image
+      condition: false
+
+### JOB ###
+  - job: getUpdatedSnapshot
+    timeoutInMinutes: 360
+    condition: true
+    displayName: Download, import snapshot, setup node and run
+    variables: 
+      snapshotFileName: snapshot.roll
+      tezosNodeOptions: --history-mode=experimental-rolling --rpc-addr :8732 --connections 20 --bootstrap-threshold=3
+      # experimental-rolling or full
+    steps:
+    - script: sudo apt-get update && sudo apt-get remove -y --purge man-db && sudo apt-get install -yy -qq jq dnsutils libev-dev libgmp-dev libhidapi-dev
+      displayName: Install packages
+    - script: |
+        curl $(rolling_snapshot_url) -o $(snapshotFileName).xz
+      displayName: Download snapshot
+
+    - script: |
+        xz -d $(snapshotFileName).xz
+        ls -lah $(snapshotFileName)
+      displayName: Extract/Prepare snapshot
+
+    - task: UniversalPackages@0
+      displayName: 'Download binaries'
+      inputs:
+        command: download
+        vstsFeed: 'tezos-binaries'
+        vstsFeedPackage: 'tezos-binaries-ubuntu-azure'
+        vstsPackageVersion: '*' # = latest version
+        downloadDirectory: '$(System.DefaultWorkingDirectory)/bin'
+     
+    - script: |
+        chmod +x ./bin/*
+        ./bin/tezos-node snapshot import $(snapshotFileName) $(tezosNodeOptions) --block=$(import_block) && rm $(snapshotFileName)
+      displayName: Import snapshot
+
+    - script: |
+        ./bin/tezos-node identity generate
+        ./bin/tezos-node config init
+      displayName: Setup tezos node
+
+    - script: |
+        timeout 120 ./bin/tezos-node run $(tezosNodeOptions) || true
+      displayName: Run tezos node in foreground for 2 minutes
+
+    - script: |
+        nohup ./bin/tezos-node run $(tezosNodeOptions) </dev/null >/dev/null 2>&1 &
+      displayName: Run tezos node in background
+
+    - script: |
+        ps auxw | grep tezos-node
+        du -hs /home/vsts/.tezos-node/ || true
+        sleep 10
+        bash scripts/addpeers_2.0.sh || true
+        echo "Waiting for node to be bootstrapped"
+        ./bin/tezos-client bootstrapped
+        ./bin/tezos-client get timestamp
+        ./bin/tezos-client rpc get /chains/main/blocks/head/hash|tr -d '"'
+        ./bin/tezos-client rpc get /chains/main/blocks/head | jq '.header.level'
+        ./bin/tezos-client rpc get /chains/main/blocks/head | jq '.header.level, .header.timestamp' | sed 's/:/./g'
+        du -hs /home/vsts/.tezos-node/ || true
+      displayName: Run add peers script, wait for node to be bootstrapped
+
+    - script: |
+        sleep $(chainSyncDurationSeconds)
+        b=$(./bin/tezos-client rpc get /chains/main/blocks/head/hash|tr -d '"')
+        l=$(./bin/tezos-client rpc get /chains/main/blocks/head | jq '.header.level')
+        t=$(./bin/tezos-client rpc get /chains/main/blocks/head | jq '.header.level, .header.timestamp' | sed 's/:/./g')
+        echo "##vso[task.setvariable variable=block;isOutput=true]$b"
+        echo "##vso[task.setvariable variable=blockLevel;isOutput=true]$l"
+        echo "##vso[task.setvariable variable=blockTimeStamp;isOutput=true]$t"
+        pkill tezos-node
+        sleep 10
+        ps auxw | grep tezos-node
+        pkill -9 tezos-node || true
+      displayName: Wait to fully sync chain and terminate tezos-node
+      name: endsync
+
+    - task: CopyFiles@2
+      displayName: 'Copy Files to: $(Build.ArtifactStagingDirectory)'
+      inputs:
+        SourceFolder: /home/vsts/.tezos-node/
+        Contents: |
+          **/*.json
+          !/context
+          !/store
+        TargetFolder: '$(Build.ArtifactStagingDirectory)'
+
+    - publish: '$(Build.ArtifactStagingDirectory)'
+      displayName: 'Publish artifact: Node settings json'
+      artifact: node-config
+
+
+### JOB ###
+  - job: ExportResults
+    dependsOn: getUpdatedSnapshot
+    condition: succeeded('getUpdatedSnapshot')
+    variables:
+      rollingSnapshotFileName: unset
+      block: $[ dependencies.getUpdatedSnapshot.outputs['endsync.block'] ]
+      blockLevel: $[ dependencies.getUpdatedSnapshot.outputs['endsync.blockLevel'] ]
+      blockTimeStamp: $[ dependencies.getUpdatedSnapshot.outputs['endsync.blockTimeStamp'] ]
+    displayName: Export and publish snapshots
+    steps:
+
+    ## Fake steps ##
+    - script: |
+        echo "##vso[task.setvariable variable=block]fAkE"
+      condition: false
+    ## end
+    - script: | 
+        echo $(block)
+        mkdir ./snapshots
+      displayName: Prepare for snapshot exports
+
+    - task: PowerShell@2
+      displayName: Set date time stamp variable
+      inputs:
+        targetType: 'inline'
+        script: |
+          $Time = Get-Date
+          $Time = $Time.ToUniversalTime()
+          $date = $Time.ToString("yyyy-MM-dd HH:mmK")
+          Write-Host "##vso[task.setvariable variable=datetimestamp]$date"
+        errorActionPreference: 'continue'
+  
+    - script: |
+        echo "##vso[task.setvariable variable=rollingSnapshotFileName]./snapshots/mainnet-$(date +%F_%H-%M)_$(block).roll"
+      displayName: Set rolling snapshot filename
+
+    - script: |
+        echo $(rollingSnapshotFileName)
+        ./bin/tezos-node snapshot export $(rollingSnapshotFileName) --rolling --block=$(block)
+      displayName: Export rolling snapshot
+
+# fake
+    - script: |
+        echo $(rollingSnapshotFileName)
+        touch $(rollingSnapshotFileName)
+        echo "content..." > $(rollingSnapshotFileName)
+      condition: false
+# end
+    - script: |
+        xz -8 $(rollingSnapshotFileName)
+        xz -l $(rollingSnapshotFileName).xz
+      displayName: Compress snapshot
+
+    - script: ls -la $(System.DefaultWorkingDirectory) && echo $(System.DefaultWorkingDirectory)
+      displayName: '[INFO] List working directory'
+
+    - publish: '$(System.DefaultWorkingDirectory)/snapshots'
+      displayName: 'Publish artifact: images from deploy folder'
+      artifact: deployable-snapshots
+
+    - task: CopyFiles@2
+      inputs:
+        sourceFolder: '$(System.DefaultWorkingDirectory)/snapshots'
+        contents: '**' # recursive
+        targetFolder: $(Build.ArtifactStagingDirectory)
+        cleanTargetFolder: true
+        overWrite: true
+        flattenFolders: false 
+        preserveTimestamp: false 
+
+    - script: echo $(Build.ArtifactStagingDirectory) && find $(Build.ArtifactStagingDirectory)
+      displayName: '[INFO] List contents of artifact staging directory'
+
+    - task: GithubRelease@0
+      displayName: 'Create GitHub Release'
+      inputs:
+        isDraft: true
+        # TODO: add latest block information
+        title: 'Tezos Rolling Blockchain Snapshot ($(datetimestamp))'
+        gitHubConnection: phlogi-personal
+        repositoryName: phlogi/tezos-snapshots
+        tagSource: manual
+        releaseNotesSource: input
+        releaseNotes: Rolling snapshot up to level $(blockLevel)@$(blockTimeStamp) and block $(block).
+        addChangeLog: false
+        tag: $(Build.BuildNumber)
+        assets: |
+            $(Build.ArtifactStagingDirectory)/**
