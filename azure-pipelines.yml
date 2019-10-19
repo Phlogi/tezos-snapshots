@@ -55,7 +55,7 @@ jobs:
 ### JOB ###
   - job: Build
     displayName: Build and publish tezos binaries
-    condition: and(always(), eq(variables['Build.Reason'], 'Schedule'))
+    # condition: and(always(), eq(variables['Build.Reason'], 'Schedule'))
     variables:
       tezosLastCommit: unknown
       tezosLastCommitStamp: unknown
