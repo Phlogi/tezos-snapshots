@@ -91,7 +91,7 @@ jobs:
         echo "##vso[task.setvariable variable=tezosLastCommitStamp]$stamp"
         current_unix_stamp=$(date +"%s")
         need_update=false
-        if (( current_unix_stamp-unix_git_stamp < 86400 )); then need_update=true && echo "found recent commit, shall build"; fi
+        if (( current_unix_stamp-unix_git_stamp < $(lookbackDurationCommitUpdate) )); then need_update=true && echo "found recent commit, shall build"; fi
         echo "##vso[task.setvariable variable=recentCommitUpdate]$need_update"
       displayName: Checkout tezos
 # note: variables are not available immediately within the same script block after being set with task.setvariable
