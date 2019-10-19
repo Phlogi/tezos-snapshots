@@ -3,7 +3,7 @@ trigger:
 
 schedules:
 - cron: "30 6 * * *"
-  displayName: Daily midnight build
+  displayName: Daily morning run
   branches:
     include:
     - master
@@ -134,7 +134,6 @@ jobs:
     displayName: Download, import snapshot, setup node and run
     variables: 
       snapshotFileName: snapshot.roll
-      tezosNodeOptions: --history-mode=experimental-rolling --rpc-addr :8732 --connections 20 --bootstrap-threshold=3
       # experimental-rolling or full
     steps:
     - script: sudo apt-get update && sudo apt-get remove -y --purge man-db && sudo apt-get install -yy -qq jq dnsutils libev-dev libgmp-dev libhidapi-dev
@@ -159,7 +158,8 @@ jobs:
      
     - script: |
         chmod +x ./bin/*
-        ./bin/tezos-node snapshot import $(snapshotFileName) $(tezosNodeOptions) --block=$(import_block) && rm $(snapshotFileName)
+        [[ ! -z "$(importBlock)" ]] && _block_arg="--block=$(importBlock)"
+        ./bin/tezos-node snapshot import $(snapshotFileName) $(tezosNodeOptions) "${_block_arg}"" && rm $(snapshotFileName)
       displayName: Import snapshot
 
     - script: |
@@ -217,19 +217,6 @@ jobs:
     - publish: '$(Build.ArtifactStagingDirectory)'
       displayName: 'Publish artifact: Node settings json'
       artifact: node-config
-
-
-### JOB ###
-  - job: ExportResults
-    dependsOn: getUpdatedSnapshot
-    condition: succeeded('getUpdatedSnapshot')
-    variables:
-      rollingSnapshotFileName: unset
-      block: $[ dependencies.getUpdatedSnapshot.outputs['endsync.block'] ]
-      blockLevel: $[ dependencies.getUpdatedSnapshot.outputs['endsync.blockLevel'] ]
-      blockTimeStamp: $[ dependencies.getUpdatedSnapshot.outputs['endsync.blockTimeStamp'] ]
-    displayName: Export and publish snapshots
-    steps:
 
     ## Fake steps ##
     - script: |
