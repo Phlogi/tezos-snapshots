@@ -165,6 +165,7 @@ jobs:
 
     - task: DownloadPipelineArtifact@2
       displayName: Download full snapshot from previous build
+      condition: false
       inputs:
         buildType: 'specific'
         artifact: 'snapshots-for-pipeline'
@@ -174,9 +175,17 @@ jobs:
         # pipelineId: 12 # the build id from which to download the artifacts. For example: 1764
         buildVersionToDownload: 'latest'
 
-    - download: current
-      displayName: Download tezos config
-      artifact: node-config
+    - task: DownloadPipelineArtifact@2
+      displayName: Download tezos config from previous build
+      condition: false
+      inputs:
+        buildType: 'specific'
+        artifact: 'tezos-node-config'
+        targetPath: $(Pipeline.Workspace)/node-config
+        definition: $(System.DefinitionId)
+        project: $(System.TeamProjectId)
+        # pipelineId: 12 # the build id from which to download the artifacts. For example: 1764
+        buildVersionToDownload: 'latest'
 
     - script: ls -la $(Pipeline.Workspace)/snapshots-for-pipeline && ls -la $(Pipeline.Workspace)/node-config
 
