@@ -139,15 +139,13 @@ jobs:
     - script: sudo apt-get update && sudo apt-get install -yy -qq jq dnsutils libev-dev libgmp-dev libhidapi-dev
       displayName: Install packages
     - script: |
-        curl $(rollingSnapshotUrl) -o $(snapshotFileName).xz
+        curl $(fullSnapshotUrl) -o $(snapshotFileName).xz
       displayName: Download snapshot
-      condition: false
 
     - script: |
         xz -d $(snapshotFileName).xz
         ls -lah $(snapshotFileName)
       displayName: Extract/Prepare snapshot
-      condition: false
 
     - task: UniversalPackages@0
       displayName: 'Download latest tezos binaries'
@@ -164,7 +162,6 @@ jobs:
         echo "./bin/tezos-node snapshot import $(snapshotFileName) $(tezosNodeImportOptions) ${_block_arg}"
         ./bin/tezos-node snapshot import $(snapshotFileName) $(tezosNodeImportOptions) ${_block_arg} && rm $(snapshotFileName)
       displayName: Import snapshot
-      condition: false
 
     - task: DownloadPipelineArtifact@2
       displayName: Download full snapshot from previous build
@@ -190,12 +187,13 @@ jobs:
         buildVersionToDownload: 'latest'
 
     - script: ls -la $(Pipeline.Workspace)/snapshots-for-pipeline && ls -la $(Pipeline.Workspace)/node-config
+      continueOnError: true
 
     # move existing config if available, then set condition for this task below
     - script: |
         ./bin/tezos-node identity generate
         ./bin/tezos-node config init
-        # copy back stuff
+        # copy back stuff from previous build
         if [[ -f $(Pipeline.Workspace)/node-config/peers.json ]] && mv -v $(Pipeline.Workspace)/node-config/peers.json /home/vsts/.tezos-node/
       displayName: Setup tezos node, restore config from artifact
 
@@ -281,7 +279,6 @@ jobs:
         echo $(rollingSnapshotFileName)
         ./bin/tezos-node snapshot export $(rollingSnapshotFileName) --rolling --block=$(block)
       displayName: Export rolling snapshot
-      condition: false
 
     - script: |
         echo $(fullSnapshotFileName)
@@ -307,7 +304,6 @@ jobs:
     - script: ls -la $(System.DefaultWorkingDirectory) && echo $(System.DefaultWorkingDirectory)
       displayName: '[INFO] List working directory'
 
-    # TODO: Select only full snapshot here
     - publish: '$(fullSnapshotFileName)'
       displayName: 'Save full snapshot for next sync (internal).'
       artifact: snapshots-for-pipeline
