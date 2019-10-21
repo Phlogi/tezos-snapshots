@@ -142,11 +142,6 @@ jobs:
         curl $(fullSnapshotUrl) -o $(snapshotFileName).xz
       displayName: Download snapshot
       condition: eq(variables['useExternalSnapshot'], true)
-    - script: |
-        xz -d $(snapshotFileName).xz
-        ls -lah $(snapshotFileName)
-      displayName: Extract/Prepare snapshot
-      condition: eq(variables['useExternalSnapshot'], true)
 
     - task: DownloadPipelineArtifact@2
       displayName: Download full snapshot from previous build
@@ -161,11 +156,15 @@ jobs:
         buildVersionToDownload: 'latest'
     - script: |
         ls -lah $(Pipeline.Workspace)/snapshots-for-pipeline
-        mv -v $(Pipeline.Workspace)/snapshots-for-pipeline/snapshot-from-build.full $(snapshotFileName)
+        mv -v $(Pipeline.Workspace)/snapshots-for-pipeline/snapshot-from-build.full.xz $(snapshotFileName)
       displayName: Prepare snapshot from artifact storage (uncompressed)
       condition: eq(variables['useExternalSnapshot'], false)
 
-
+    - script: |
+        xz -d $(snapshotFileName).xz
+        ls -lah $(snapshotFileName)
+      displayName: Extract/Prepare snapshot
+   
     - task: UniversalPackages@0
       displayName: 'Download latest tezos binaries'
       inputs:
@@ -306,7 +305,7 @@ jobs:
         xz -l $(rollingSnapshotFileName).xz
         xz -8 $(fullSnapshotFileName)
         xz -l $(fullSnapshotFileName).xz
-        mv $(fullSnapshotFileName) snapshot-from-build.full
+        mv -v $(fullSnapshotFileName).xz snapshot-from-build.full.xz
       displayName: Compress snapshots
 
     - script: ls -la $(System.DefaultWorkingDirectory) && echo $(System.DefaultWorkingDirectory)
