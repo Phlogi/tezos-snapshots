@@ -74,14 +74,8 @@ jobs:
           Write-Host "##vso[task.setvariable variable=datetimestamp]$date"
           $UnixStamp = Get-Date -UFormat %s
           Write-Host "##vso[task.setvariable variable=unixdatetimestamp]$UnixStamp"
-        errorActionPreference: 'continue'
-
-    - script: sudo add-apt-repository ppa:avsm/ppa && sudo apt-get update && sudo apt-get remove -y --purge man-db && sudo apt-get install -yy -qq opam rsync m4 build-essential patch unzip bubblewrap wget libev-dev libgmp-dev libhidapi-dev m4 perl pkg-config
-      displayName: Install opam and dependencies
 
     - script: |
-        opam init --bare -n
-        eval $(opam env)
         git clone -b $(gitCheckoutBranch) --depth 1 $(gitCloneUrl)
         cd tezos
         commit_id=$(git log --format="%h" -n 1) && echo $commit_id
@@ -94,9 +88,15 @@ jobs:
         if (( current_unix_stamp-unix_git_stamp < $(lookbackDurationCommitUpdate) )); then need_update=true && echo "found recent commit, shall build"; fi
         echo "##vso[task.setvariable variable=recentCommitUpdate]$need_update"
       displayName: Checkout tezos
+
 # note: variables are not available immediately within the same script block after being set with task.setvariable
+    - script: sudo add-apt-repository ppa:avsm/ppa && sudo apt-get update && sudo apt-get remove -y --purge man-db && sudo apt-get install -yy -qq opam rsync m4 build-essential patch unzip bubblewrap wget libev-dev libgmp-dev libhidapi-dev m4 perl pkg-config
+      displayName: Install opam and dependencies
+      condition: eq(variables['recentCommitUpdate'], true)
 
     - script: |
+        opam init --bare -n
+        eval $(opam env)
         cd tezos && ls -la && make build-deps && eval $(opam env) && make && ls -lah tezos-* && mkdir ../bin && mv -v tezos-* ../bin/
       displayName: Build tezos
       condition: eq(variables['recentCommitUpdate'], true)
