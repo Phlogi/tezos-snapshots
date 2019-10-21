@@ -163,9 +163,15 @@ jobs:
         ./bin/tezos-node snapshot import $(snapshotFileName) $(tezosNodeImportOptions) ${_block_arg} && rm $(snapshotFileName)
       displayName: Import snapshot
 
-    - download: current
+    - task: DownloadPipelineArtifact@2
       displayName: Download full snapshot from previous build
-      artifact: snapshots-for-pipeline
+      inputs:
+        buildType: 'specific'
+        artifact: 'snapshots-for-pipeline'
+        targetPath: $(Pipeline.Workspace)/snapshots-for-pipeline
+        definition: $(System.DefinitionId)
+        # pipelineId: 12 # the build id from which to download the artifacts. For example: 1764
+        buildVersionToDownload: 'latest'
 
     - download: current
       displayName: Download tezos config
