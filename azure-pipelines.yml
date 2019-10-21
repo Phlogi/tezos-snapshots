@@ -141,11 +141,13 @@ jobs:
     - script: |
         curl $(rollingSnapshotUrl) -o $(snapshotFileName).xz
       displayName: Download snapshot
+      condition: false
 
     - script: |
         xz -d $(snapshotFileName).xz
         ls -lah $(snapshotFileName)
       displayName: Extract/Prepare snapshot
+      condition: false
 
     - task: UniversalPackages@0
       displayName: 'Download latest tezos binaries'
@@ -177,7 +179,6 @@ jobs:
 
     - task: DownloadPipelineArtifact@2
       displayName: Download tezos config from previous build
-      condition: false
       inputs:
         buildType: 'specific'
         artifact: 'tezos-node-config'
