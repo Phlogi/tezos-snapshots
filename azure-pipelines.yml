@@ -159,7 +159,7 @@ jobs:
     - script: |
         chmod +x ./bin/*
         [[ ! -z "$(importBlock)" ]] && _block_arg="--block=$(importBlock)"
-        ./bin/tezos-node snapshot import $(snapshotFileName) $(tezosNodeOptions) "${_block_arg}"" && rm $(snapshotFileName)
+        ./bin/tezos-node snapshot import $(snapshotFileName) $(tezosNodeOptions) "${_block_arg}" && rm $(snapshotFileName)
       displayName: Import snapshot
 
     - script: |
