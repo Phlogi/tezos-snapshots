@@ -163,10 +163,23 @@ jobs:
         ./bin/tezos-node snapshot import $(snapshotFileName) $(tezosNodeImportOptions) ${_block_arg} && rm $(snapshotFileName)
       displayName: Import snapshot
 
+    - download: current
+      displayName: Download full snapshot from previous build
+      artifact: snapshots-for-pipeline
+
+    - download: current
+      displayName: Download tezos config
+      artifact: node-config
+
+    - script: ls -la $(Pipeline.Workspace)/snapshots-for-pipeline && ls -la $(Pipeline.Workspace)/node-config
+
+    # move existing config if available, then set condition for this task below
     - script: |
         ./bin/tezos-node identity generate
         ./bin/tezos-node config init
-      displayName: Setup tezos node
+        # copy back stuff
+        if [[ -f $(Pipeline.Workspace)/node-config/peers.json ]] && mv -v $(Pipeline.Workspace)/node-config/peers.json /home/vsts/.tezos-node/
+      displayName: Setup tezos node, restore config from artifact
 
     - script: |
         timeout 120 ./bin/tezos-node run $(tezosNodeOptions) || true
@@ -174,7 +187,7 @@ jobs:
 
     - script: |
         nohup ./bin/tezos-node run $(tezosNodeOptions) </dev/null >/dev/null 2>&1 &
-      displayName: Run tezos node in background
+      displayName: Run tezos node in background for a fixed time
 
     - script: |
         ps auxw | grep tezos-node
@@ -184,17 +197,16 @@ jobs:
         echo "Waiting for node to be bootstrapped"
         ./bin/tezos-client bootstrapped
         ./bin/tezos-client get timestamp
-        ./bin/tezos-client rpc get /chains/main/blocks/head/hash|tr -d '"'
-        ./bin/tezos-client rpc get /chains/main/blocks/head | jq '.header.level'
-        ./bin/tezos-client rpc get /chains/main/blocks/head | jq '.header.level, .header.timestamp' | sed 's/:/./g'
         du -hs /home/vsts/.tezos-node/ || true
       displayName: Run add peers script, wait for node to be bootstrapped
 
     - script: |
         sleep $(chainSyncDurationSeconds)
-        b=$(./bin/tezos-client rpc get /chains/main/blocks/head/hash|tr -d '"')
-        l=$(./bin/tezos-client rpc get /chains/main/blocks/head | jq '.header.level')
-        t=$(./bin/tezos-client rpc get /chains/main/blocks/head | jq '.header.level, .header.timestamp' | sed 's/:/./g')
+        _query_result=$(./bin/tezos-client rpc get /chains/main/blocks/head~10)
+        # get information about the tip of the chain in one call, so it's consistent
+        b=$(echo $_query_result | jq '.hash' | tr -d '"')
+        l=$(echo $_query_result | jq '.header.level')
+        t=$(echo $_query_result | jq '.header.timestamp' | tr -d '"' | sed 's/:/./g')
         echo "##vso[task.setvariable variable=block]$b"
         echo "##vso[task.setvariable variable=blockLevel]$l"
         echo "##vso[task.setvariable variable=blockTimeStamp]$t"
@@ -219,6 +231,8 @@ jobs:
       displayName: 'Publish artifact: Node settings json'
       artifact: node-config
 
+    - script: ls -la $(Build.ArtifactStagingDirectory)
+
     ## Fake steps ##
     - script: |
         echo "##vso[task.setvariable variable=block]fAkE"
@@ -242,33 +256,47 @@ jobs:
   
     - script: |
         echo "##vso[task.setvariable variable=rollingSnapshotFileName]./snapshots/mainnet-$(date +%F_%H-%M)_$(block).roll"
-      displayName: Set rolling snapshot filename
+        echo "##vso[task.setvariable variable=fullSnapshotFileName]./snapshots/mainnet-$(date +%F_%H-%M)_$(block).full"
+      displayName: Set snapshot filenames
 
     - script: |
         echo $(rollingSnapshotFileName)
         ./bin/tezos-node snapshot export $(rollingSnapshotFileName) --rolling --block=$(block)
       displayName: Export rolling snapshot
+      condition: false
+
+    - script: |
+        echo $(fullSnapshotFileName)
+        ./bin/tezos-node snapshot export $(fullSnapshotFileName) --block=$(block)
+      displayName: Export full snapshot
 
 # fake
     - script: |
-        echo $(rollingSnapshotFileName)
-        touch $(rollingSnapshotFileName)
-        echo "content..." > $(rollingSnapshotFileName)
+        echo $(fullSnapshotFileName)
+        touch $(fullSnapshotFileName)
+        echo "content..." > $(fullSnapshotFileName)
       condition: false
 # end
+
+    # TODO: Add checksum files
     - script: |
         xz -8 $(rollingSnapshotFileName)
         xz -l $(rollingSnapshotFileName).xz
-      displayName: Compress snapshot
+        xz -8 $(fullSnapshotFileName)
+        xz -l $(fullSnapshotFileName).xz
+      displayName: Compress snapshots
 
     - script: ls -la $(System.DefaultWorkingDirectory) && echo $(System.DefaultWorkingDirectory)
       displayName: '[INFO] List working directory'
 
-    - publish: '$(System.DefaultWorkingDirectory)/snapshots'
-      displayName: 'Publish artifact: images from deploy folder'
-      artifact: deployable-snapshots
+    # TODO: Select only full snapshot here
+    - publish: '$(fullSnapshotFileName)'
+      displayName: 'Save full snapshot for next sync (internal).'
+      artifact: snapshots-for-pipeline
 
+    # Publish both snapshots
     - task: CopyFiles@2
+      displayName: Prepare publish rolling and full snapshot to artifact staging
       inputs:
         sourceFolder: '$(System.DefaultWorkingDirectory)/snapshots'
         contents: '**' # recursive
@@ -282,16 +310,16 @@ jobs:
       displayName: '[INFO] List contents of artifact staging directory'
 
     - task: GithubRelease@0
-      displayName: 'Create GitHub Release'
+      displayName: 'Create GitHub Release for snapshots'
       inputs:
         isDraft: true
         # TODO: add latest block information
-        title: 'Tezos Rolling Blockchain Snapshot ($(datetimestamp))'
+        title: 'Tezos Mainnet Snapshots ($(datetimestamp))'
         gitHubConnection: phlogi-personal
         repositoryName: phlogi/tezos-snapshots
         tagSource: manual
         releaseNotesSource: input
-        releaseNotes: Rolling snapshot up to level $(blockLevel)@$(blockTimeStamp) and block $(block).
+        releaseNotes: Rolling and full napshots up to level $(blockLevel)@$(blockTimeStamp) and block $(block).
         addChangeLog: false
         tag: $(Build.BuildNumber)
         assets: |
