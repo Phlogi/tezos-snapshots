@@ -164,6 +164,7 @@ jobs:
         echo "./bin/tezos-node snapshot import $(snapshotFileName) $(tezosNodeImportOptions) ${_block_arg}"
         ./bin/tezos-node snapshot import $(snapshotFileName) $(tezosNodeImportOptions) ${_block_arg} && rm $(snapshotFileName)
       displayName: Import snapshot
+      condition: false
 
     - task: DownloadPipelineArtifact@2
       displayName: Download full snapshot from previous build
