@@ -201,7 +201,7 @@ jobs:
         ./bin/tezos-node identity generate
         ./bin/tezos-node config init
         # copy back stuff from previous build
-        if [[ -f $(Pipeline.Workspace)/node-config/peers.json ]] && mv -v $(Pipeline.Workspace)/node-config/peers.json /home/vsts/.tezos-node/
+        [[ -f $(Pipeline.Workspace)/node-config/peers.json ]] && mv -v $(Pipeline.Workspace)/node-config/peers.json /home/vsts/.tezos-node/
       displayName: Setup tezos node, restore config from artifact
 
     - script: |
