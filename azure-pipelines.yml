@@ -182,7 +182,7 @@ jobs:
       displayName: Download tezos config from previous build
       inputs:
         buildType: 'specific'
-        artifact: 'tezos-node-config'
+        artifact: 'node-config'
         targetPath: $(Pipeline.Workspace)/node-config
         definition: $(System.DefinitionId)
         project: $(System.TeamProjectId)
