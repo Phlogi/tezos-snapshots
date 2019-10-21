@@ -195,9 +195,9 @@ jobs:
         b=$(./bin/tezos-client rpc get /chains/main/blocks/head/hash|tr -d '"')
         l=$(./bin/tezos-client rpc get /chains/main/blocks/head | jq '.header.level')
         t=$(./bin/tezos-client rpc get /chains/main/blocks/head | jq '.header.level, .header.timestamp' | sed 's/:/./g')
-        echo "##vso[task.setvariable variable=block;isOutput=true]$b"
-        echo "##vso[task.setvariable variable=blockLevel;isOutput=true]$l"
-        echo "##vso[task.setvariable variable=blockTimeStamp;isOutput=true]$t"
+        echo "##vso[task.setvariable variable=block]$b"
+        echo "##vso[task.setvariable variable=blockLevel]$l"
+        echo "##vso[task.setvariable variable=blockTimeStamp]$t"
         pkill tezos-node
         sleep 10
         ps auxw | grep tezos-node
@@ -225,7 +225,7 @@ jobs:
       condition: false
     ## end
     - script: | 
-        echo $(block)
+        echo $(block) && echo $(blockLevel) && echo $(blockTimeStamp)
         mkdir ./snapshots
       displayName: Prepare for snapshot exports
 
