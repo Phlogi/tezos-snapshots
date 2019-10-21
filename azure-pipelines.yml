@@ -86,7 +86,7 @@ jobs:
         current_unix_stamp=$(date +"%s")
         need_update=false
         if (( current_unix_stamp-unix_git_stamp < $(lookbackDurationCommitUpdate) )); then need_update=true && echo "found recent commit, shall build"; fi
-        need_update=true
+        [[ $(forceBuild) == true ]] && need_update=true
         echo "##vso[task.setvariable variable=recentCommitUpdate]$need_update"
       displayName: Checkout tezos
 
