@@ -130,7 +130,6 @@ jobs:
 ### JOB ###
   - job: getUpdatedSnapshot
     timeoutInMinutes: 360
-    condition: true
     displayName: Download, import snapshot, setup node and run
     variables: 
       snapshotFileName: snapshot.bootstrap
