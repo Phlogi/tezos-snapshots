@@ -140,16 +140,16 @@ jobs:
     - script: |
         curl $(fullSnapshotUrl) -o $(snapshotFileName).xz
       displayName: Download snapshot
-      condition: eq(variables['$(useExternalSnapshot)'], true)
+      condition: eq(variables['useExternalSnapshot'], true)
     - script: |
         xz -d $(snapshotFileName).xz
         ls -lah $(snapshotFileName)
       displayName: Extract/Prepare snapshot
-      condition: eq(variables['$(useExternalSnapshot)'], true)
+      condition: eq(variables['useExternalSnapshot'], true)
 
     - task: DownloadPipelineArtifact@2
       displayName: Download full snapshot from previous build
-      condition: eq(variables['$(useExternalSnapshot)'], false)
+      condition: eq(variables['useExternalSnapshot'], false)
       inputs:
         buildType: 'specific'
         artifact: 'snapshots-for-pipeline'
@@ -162,7 +162,7 @@ jobs:
         ls -lah $(Pipeline.Workspace)/snapshots-for-pipeline
         mv -v $(Pipeline.Workspace)/snapshots-for-pipeline/snapshot-from-build.full $(snapshotFileName)
       displayName: Prepare snapshot from artifact storage (uncompressed)
-      condition: eq(variables['$(useExternalSnapshot)'], false)
+      condition: eq(variables['useExternalSnapshot'], false)
 
 
     - task: UniversalPackages@0
