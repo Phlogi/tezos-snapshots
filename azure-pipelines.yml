@@ -182,6 +182,7 @@ jobs:
         mkdir $(ramdisk)
         sudo mount -t tmpfs -o rw,size=$sb tmpfs $(ramdisk)
         sudo chmod 777 $(ramdisk)
+        sudo mount | grep $(ramdisk)
         xz $(snapshotFileName).xz -d -c > $(ramdisk)/$(snapshotFileName)
         rm $(snapshotFileName).xz &
         ls -lah $(ramdisk)/$(snapshotFileName)
@@ -203,7 +204,7 @@ jobs:
         ./bin/tezos-node snapshot import $(ramdisk)/$(snapshotFileName) $(tezosNodeImportOptions) ${_block_arg}
       displayName: Import snapshot
 
-    - script: free -m && sudo umount $(ramdisk) && mount && free -m
+    - script: free -m && sudo umount $(ramdisk) && mount | grep tmpfs && free -m
       displayName: Remove ramdisk
 
     - task: DownloadPipelineArtifact@2
