@@ -166,6 +166,7 @@ jobs:
     # - extract to a temporary ramdisk
     - script: |
         #xz -d $(snapshotFileName).xz
+        mkdir $(ramdisk)
         sudo mount -t tmpfs -o rw,size=2.8G tmpfs $(ramdisk)
         sudo chmod 777 $(ramdisk)
         xz $(snapshotFileName).xz -d -c > $(ramdisk)/$(snapshotFileName)
