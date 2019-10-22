@@ -29,7 +29,7 @@ jobs:
 ### TEST JOB ###
   - job: Test
     displayName: Test job only
-    condition: true
+    condition: $(runTestJob)
     variables:
       ramdisk: $(System.DefaultWorkingDirectory)/ramdisk
     steps: 
@@ -37,7 +37,7 @@ jobs:
     - script: |
         pwd
         mkdir $(ramdisk)
-        sudo mount -t tmpfs -o rw,size=2,8G tmpfs $(ramdisk)
+        sudo mount -t tmpfs -o rw,size=3G tmpfs $(ramdisk)
         ls -lah $(ramdisk)
         sudo chmod 777 $(ramdisk)
         touch $(ramdisk)/foobar
@@ -176,8 +176,11 @@ jobs:
     # - xzcat to tezos-node
     # - extract to a temporary ramdisk
     - script: |
+        xz -l $(snapshotFileName).xz
+        sb=$(xz --robot -l $(snapshotFileName).xz | grep file |  awk '{print $5}')
+        let sb+=1024
         mkdir $(ramdisk)
-        sudo mount -t tmpfs -o rw,size=3G tmpfs $(ramdisk)
+        sudo mount -t tmpfs -o rw,size=$sb tmpfs $(ramdisk)
         sudo chmod 777 $(ramdisk)
         xz $(snapshotFileName).xz -d -c > $(ramdisk)/$(snapshotFileName)
         rm $(snapshotFileName).xz &
