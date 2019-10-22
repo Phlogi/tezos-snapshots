@@ -134,6 +134,7 @@ jobs:
     displayName: Download, import snapshot, setup node and run
     variables: 
       snapshotFileName: snapshot.bootstrap
+      ramdisk: $(System.DefaultWorkingDirectory)/ramdisk
       # experimental-rolling or full
     steps:
     - script: sudo apt-get update && sudo apt-get install -yy -qq jq dnsutils libev-dev libgmp-dev libhidapi-dev
@@ -157,13 +158,20 @@ jobs:
     - script: |
         ls -lah $(Pipeline.Workspace)/snapshots-for-pipeline
         mv -v $(Pipeline.Workspace)/snapshots-for-pipeline/snapshot-from-build.full.xz $(snapshotFileName)
-      displayName: Prepare snapshot from artifact storage (uncompressed)
+      displayName: Prepare snapshot from artifact storage, previous build
       condition: eq(variables['useExternalSnapshot'], false)
 
+    # TODO: 
+    # - xzcat to tezos-node
+    # - extract to a temporary ramdisk
     - script: |
-        xz -d $(snapshotFileName).xz
-        ls -lah $(snapshotFileName)
-      displayName: Extract/Prepare snapshot
+        #xz -d $(snapshotFileName).xz
+        sudo mount -t tmpfs -o rw,size=2.8G tmpfs $(ramdisk)
+        sudo chmod 777 $(ramdisk)
+        tar -xJf $(snapshotFileName).xz -C $(ramdisk)
+        rm $(snapshotFileName).xz &
+        ls -lah $(ramdisk)/$(snapshotFileName)
+      displayName: Extract snapshot
    
     - task: UniversalPackages@0
       displayName: 'Download latest tezos binaries'
@@ -177,9 +185,12 @@ jobs:
     - script: |
         chmod +x ./bin/*
         [[ ! -z "$(importBlock)" ]] && _block_arg="--block=$(importBlock)"
-        echo "./bin/tezos-node snapshot import $(snapshotFileName) $(tezosNodeImportOptions) ${_block_arg}"
-        ./bin/tezos-node snapshot import $(snapshotFileName) $(tezosNodeImportOptions) ${_block_arg} && rm $(snapshotFileName)
+        echo "./bin/tezos-node snapshot import $(ramdisk)/$(snapshotFileName) $(tezosNodeImportOptions) ${_block_arg}"
+        ./bin/tezos-node snapshot import $(ramdisk)/$(snapshotFileName) $(tezosNodeImportOptions) ${_block_arg}
       displayName: Import snapshot
+
+    - script: free -m && sudo umount $(ramdisk) && mount && free -m
+      displayName: Remove ramdisk
 
     - task: DownloadPipelineArtifact@2
       displayName: Download tezos config from previous build
@@ -305,18 +316,11 @@ jobs:
         xz -l $(rollingSnapshotFileName).xz
         xz -8 $(fullSnapshotFileName)
         xz -l $(fullSnapshotFileName).xz
-        mv -v $(fullSnapshotFileName).xz snapshot-from-build.full.xz
       displayName: Compress snapshots
 
     - script: ls -la $(System.DefaultWorkingDirectory) && echo $(System.DefaultWorkingDirectory)
       displayName: '[INFO] List working directory'
 
-# stage full snapshot for next build (seperate internal artifact)
-
-
-    - publish: 'snapshot-from-build.full'
-      displayName: 'Save full snapshot for next sync (internal).'
-      artifact: snapshots-for-pipeline
 
     # Publish both snapshots
     - task: CopyFiles@2
@@ -332,6 +336,15 @@ jobs:
 
     - script: echo $(Build.ArtifactStagingDirectory) && find $(Build.ArtifactStagingDirectory)
       displayName: '[INFO] List contents of artifact staging directory'
+
+    # rename full snapshot for next build, after copying to staging directory above
+    - script: mv -v $(fullSnapshotFileName).xz snapshot-from-build.full.xz
+      displayName: Rename current full snapshot to generic name for next build
+
+    - publish: 'snapshot-from-build.full.xz'
+      displayName: 'Save full snapshot for next sync (internal).'
+      artifact: snapshots-for-pipeline
+
 
     - task: GithubRelease@0
       displayName: 'Create GitHub Release for snapshots'
