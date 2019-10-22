@@ -2,8 +2,8 @@ trigger:
 - master
 
 schedules:
-- cron: "30 6 * * *"
-  displayName: Daily morning run
+- cron: "30 5 * * *"
+  displayName: Daily early morning run
   branches:
     include:
     - master
@@ -13,7 +13,7 @@ variables:
   vmImageName: 'ubuntu-18.04'
 
 pool:
-  vmImage: 'ubuntu-18.04'
+  vmImage: $(vmImageName)
 
 #container:
 #    image: ubuntu:latest
@@ -218,8 +218,10 @@ jobs:
         # pipelineId: 12 # the build id from which to download the artifacts. For example: 1764
         buildVersionToDownload: 'latest'
 
-    - script: ls -la $(Pipeline.Workspace)/snapshots-for-pipeline && ls -la $(Pipeline.Workspace)/node-config
-      continueOnError: true
+    - script: | 
+        ls -la $(Pipeline.Workspace)/snapshots-for-pipeline || true
+        ls -la $(Pipeline.Workspace)/node-config || true
+      displayName: '[INFO] List downloaded artifacts in workspace folder'
 
     # move existing config if available, then set condition for this task below
     - script: |
@@ -275,17 +277,13 @@ jobs:
           !/store
         TargetFolder: '$(Build.ArtifactStagingDirectory)'
 
+    - script: ls -la $(Build.ArtifactStagingDirectory)
+      displayName: '[INFO] List contents of tezos config artifact directory.'
+
     - publish: '$(Build.ArtifactStagingDirectory)'
       displayName: 'Publish artifact: Node settings json'
       artifact: node-config
 
-    - script: ls -la $(Build.ArtifactStagingDirectory)
-
-    ## Fake steps ##
-    - script: |
-        echo "##vso[task.setvariable variable=block]fAkE"
-      condition: false
-    ## end
     - script: | 
         echo $(block) && echo $(blockLevel) && echo $(blockTimeStamp)
         mkdir ./snapshots
@@ -303,8 +301,8 @@ jobs:
         errorActionPreference: 'continue'
   
     - script: |
-        echo "##vso[task.setvariable variable=rollingSnapshotFileName]./snapshots/mainnet-$(date +%F_%H-%M)_$(block).roll"
-        echo "##vso[task.setvariable variable=fullSnapshotFileName]./snapshots/mainnet-$(date +%F_%H-%M)_$(block).full"
+        echo "##vso[task.setvariable variable=rollingSnapshotFileName]./snapshots/mainnet.roll.$(date +%F_%H-%M).$(block).chain"
+        echo "##vso[task.setvariable variable=fullSnapshotFileName]./snapshots/mainnet.full.$(date +%F_%H-%M)_$(block).chain"
       displayName: Set snapshot filenames
 
     - script: |
@@ -317,20 +315,13 @@ jobs:
         ./bin/tezos-node snapshot export $(fullSnapshotFileName) --block=$(block)
       displayName: Export full snapshot
 
-# fake
-    - script: |
-        echo $(fullSnapshotFileName)
-        touch $(fullSnapshotFileName)
-        echo "content..." > $(fullSnapshotFileName)
-      condition: false
-# end
-
     # TODO: Add checksum files
     - script: |
         xz -8 $(rollingSnapshotFileName)
         xz -l $(rollingSnapshotFileName).xz
         xz -8 $(fullSnapshotFileName)
         xz -l $(fullSnapshotFileName).xz
+        sha256sum *.xz > checksums.sha256
       displayName: Compress snapshots
 
     - script: ls -la $(System.DefaultWorkingDirectory) && echo $(System.DefaultWorkingDirectory)
