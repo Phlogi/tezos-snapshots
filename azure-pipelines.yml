@@ -358,14 +358,13 @@ jobs:
     - task: GithubRelease@0
       displayName: 'Create GitHub Release for snapshots'
       inputs:
-        isDraft: true
-        # TODO: add latest block information
+        isPreRelease: true
         title: 'Tezos Mainnet Snapshots ($(datetimestamp))'
         gitHubConnection: phlogi-personal
         repositoryName: phlogi/tezos-snapshots
         tagSource: manual
         releaseNotesSource: input
-        releaseNotes: Rolling and full napshots up to level $(blockLevel)@$(blockTimeStamp) and block $(block).
+        releaseNotes: Rolling and full snapshots up to level $(blockLevel) at $(blockTimeStamp) and block $(block).
         addChangeLog: false
         tag: $(Build.BuildNumber)
         assets: |
