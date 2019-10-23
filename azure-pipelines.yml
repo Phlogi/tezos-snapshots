@@ -168,7 +168,7 @@ jobs:
         buildVersionToDownload: 'latest'
     - script: |
         ls -lah $(Pipeline.Workspace)/snapshots-for-pipeline
-        mv -v $(Pipeline.Workspace)/snapshots-for-pipeline/snapshot-from-build.full.xz $(snapshotFileName)
+        mv -v $(Pipeline.Workspace)/snapshots-for-pipeline/snapshot-from-build.full.xz $(snapshotFileName).xz
         latest_block=$(cat $(Pipeline.Workspace)/snapshots-for-pipeline/snapshot-latest-block.info)
         echo "##vso[task.setvariable variable=importBlock]$latest_block"
       displayName: Prepare snapshot from artifact storage, previous build
@@ -185,9 +185,7 @@ jobs:
         sudo mount -t tmpfs -o rw,size=$sb tmpfs $(ramdisk)
         sudo chmod 777 $(ramdisk)
         sudo mount | grep $(ramdisk)
-        xz $(snapshotFileName).xz -d -c > $(ramdisk)/$(snapshotFileName)
-        rm $(snapshotFileName).xz &
-        ls -lah $(ramdisk)/$(snapshotFileName)
+        xz $(snapshotFileName).xz -d -c > $(ramdisk)/$(snapshotFileName) && rm $(snapshotFileName).xz && ls -lah $(ramdisk)/$(snapshotFileName)
       displayName: Extract snapshot
    
     - task: UniversalPackages@0
