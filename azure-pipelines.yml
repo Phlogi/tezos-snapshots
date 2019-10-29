@@ -174,9 +174,6 @@ jobs:
       displayName: Prepare snapshot from artifact storage, previous build
       condition: eq(variables['useExternalSnapshot'], false)
 
-    # TODO: 
-    # - xzcat to tezos-node
-    # - extract to a temporary ramdisk
     - script: |
         xz -l $(snapshotFileName).xz
         sb=$(xz --robot -l $(snapshotFileName).xz | grep file |  awk '{print $5}')
@@ -315,6 +312,11 @@ jobs:
         ./bin/tezos-node snapshot export $(fullSnapshotFileName) --block=$(block)
       displayName: Export full snapshot
 
+    - script: |
+        jq -jr '.[] | select(.last_established_connection != null) | .last_established_connection | .[0] | "[",.addr,"]:",.port,"\n"' /home/vsts/.tezos-node/peers.json > ./snapshots/public_peers_tezos_mainnet.list
+        tail ./snapshots/public_peers_tezos_mainnet.list || true
+      displayName: Export a list of public peers from peers.json
+
     # TODO: Add checksum files
     - script: |
         xz -8 $(rollingSnapshotFileName)
@@ -334,7 +336,7 @@ jobs:
       displayName: Prepare publish rolling and full snapshot to artifact staging
       inputs:
         sourceFolder: '$(System.DefaultWorkingDirectory)/snapshots'
-        contents: '**' # recursive
+        contents: '**' # recursive and everything, including the .list file for example
         targetFolder: $(Build.ArtifactStagingDirectory)
         cleanTargetFolder: true
         overWrite: true
@@ -364,7 +366,7 @@ jobs:
         repositoryName: phlogi/tezos-snapshots
         tagSource: manual
         releaseNotesSource: input
-        releaseNotes: Rolling and full snapshots up to level $(blockLevel) at $(blockTimeStamp) and block $(block).
+        releaseNotes: Rolling and full snapshots up to level $(blockLevel) at $(blockTimeStamp) and block $(block). Current list of public tezos peers. 
         addChangeLog: false
         tag: $(Build.BuildNumber)
         assets: |
