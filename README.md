@@ -1,11 +1,12 @@
 # :tada: Automatic tezos blockchain snapshots [releases](https://github.com/Phlogi/tezos-snapshots/releases)
 - Updated daily :repeat:
-- Snapshots in rolling and full mode 
-- File name shows block number and level
+- Snapshots in *rolling* and *full* mode 
+- Highly compressed with *xz*, use xz-utils to decompress
+- File name shows *block number* and *level*
 
 # Public list of peers :handshake:
 - Updated daily :repeat:
-- One peer per line, format is ready for tezos connect and trust commands.
+- One peer per line, format is ready for `tezos trust address` and `tezos connect address` commands
 
 # Scripting :page_with_curl:
 ## Get latest release
