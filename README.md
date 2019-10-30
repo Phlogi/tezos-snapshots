@@ -4,8 +4,8 @@
 - File name shows block number and level
 
 # Public list of peers :handshake:
-- Updated daily
-- Format ready for tezos connect and trust commands
+- Updated daily :repeat:
+- One peer per line, format is ready for tezos connect and trust commands.
 
 # Scripting :page_with_curl:
 ## Get latest release
