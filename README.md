@@ -1,4 +1,4 @@
-# :tada: Automatic tezos blockchain snapshots [releases](https://github.com/Phlogi/tezos-snapshots/releases)
+# :tada: Automatic tezos blockchain snapshot [releases](https://github.com/Phlogi/tezos-snapshots/releases)
 - Updated daily :repeat:
 - Snapshots in *rolling* and *full* mode 
 - Highly compressed with *xz*, use xz-utils to decompress
