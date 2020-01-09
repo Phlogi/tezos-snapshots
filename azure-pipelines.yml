@@ -321,7 +321,7 @@ jobs:
     - script: |
         xz -8 $(rollingSnapshotFileName)
         xz -l $(rollingSnapshotFileName).xz
-        xz -8 $(fullSnapshotFileName)
+        xz -9e -T 0 $(fullSnapshotFileName)
         xz -l $(fullSnapshotFileName).xz
         sha256sum ./snapshots/*.xz > checksums.sha256
         cat ./snapshots/checksums.sha256 || true
