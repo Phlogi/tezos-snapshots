@@ -183,16 +183,18 @@ jobs:
         sb=$(xz --robot -l $(snapshotFileName).xz | grep file |  awk '{print $5}')
         let sb+=1024
         mkdir $(ramdisk)
+        free -m
         sudo mount -t tmpfs -o rw,size=$sb tmpfs $(ramdisk)
         sudo chmod 777 $(ramdisk)
         sudo mount | grep $(ramdisk)
+        free -m
         xz $(snapshotFileName).xz -d -c > $(ramdisk)/$(snapshotFileName) && rm $(snapshotFileName).xz && ls -lah $(ramdisk)/$(snapshotFileName)
       displayName: Extract snapshot
    
     # universal package seems broken
     - task: UniversalPackages@0
       displayName: 'Download latest tezos binaries'
-      condition: false
+      condition: true
       inputs:
         command: download
         vstsFeed: 'tezos-binaries'
@@ -202,6 +204,7 @@ jobs:
 
     - task: DownloadPipelineArtifact@2
       displayName: Download tezos binaries artifact 
+      condition: false
       inputs:
         buildType: 'specific'
         artifact: 'tezos-binaries'
