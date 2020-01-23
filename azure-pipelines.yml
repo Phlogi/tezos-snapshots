@@ -33,6 +33,13 @@ jobs:
     variables:
       ramdisk: $(System.DefaultWorkingDirectory)/ramdisk
     steps: 
+    - script: |
+        echo "1234" > $(System.DefaultWorkingDirectory)/build.var
+
+    - publish: '$(System.DefaultWorkingDirectory)/build.var'
+      artifact: pipeline-config
+      displayName: Save pipeline-config
+
     - task: DownloadPipelineArtifact@2
       displayName: Download tezos binaries artifact 
       continueOnError: true
@@ -90,6 +97,26 @@ jobs:
       recentCommitUpdate: false
     steps:
     - checkout: none
+
+    - task: DownloadPipelineArtifact@2
+      displayName: Download pipeline config
+      continueOnError: true
+      inputs:
+        buildType: 'specific'
+        project: '$(System.TeamProjectId)'
+        definition: '$(System.DefinitionId)'
+        buildVersionToDownload: 'latest'
+        allowPartiallySucceededBuilds: true
+        allowFailedBuilds: false
+        artifactName: 'tezos-binaries'
+        targetPath: '$(System.DefaultWorkingDirectory)'
+
+    - script: |
+        ls -lah $(System.DefaultWorkingDirectory)
+        cat $(System.DefaultWorkingDirectory)/build.var
+        build=$(<$(System.DefaultWorkingDirectory)/build.var)
+        echo $build
+        echo "##vso[task.setvariable variable=build_nr_binaries]$build"
 
     - task: PowerShell@2
       displayName: Set date time stamp variable
@@ -227,7 +254,7 @@ jobs:
         definition: '$(System.DefinitionId)'
         buildVersionToDownload: 'latest'
         allowPartiallySucceededBuilds: true
-        allowFailedBuilds: true
+        allowFailedBuilds: false
         artifactName: 'tezos-binaries'
         targetPath: '$(System.DefaultWorkingDirectory)/bin'
   
