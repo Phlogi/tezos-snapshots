@@ -334,8 +334,8 @@ jobs:
           Write-Host "##vso[task.setvariable variable=datetimestamp]$date"
   
     - script: |
-        echo "##vso[task.setvariable variable=rollingSnapshotFileName]./snapshots/mainnet.roll.$(date +%F_%H-%M).$(block).chain"
-        echo "##vso[task.setvariable variable=fullSnapshotFileName]./snapshots/mainnet.full.$(date +%F_%H-%M).$(block).chain"
+        echo "##vso[task.setvariable variable=rollingSnapshotFileName]./snapshots/mainnet.roll.$(date +%F_%H-%M).$(block).$(blockLevel).chain"
+        echo "##vso[task.setvariable variable=fullSnapshotFileName]./snapshots/mainnet.full.$(date +%F_%H-%M).$(block).$(blockLevel).chain"
       displayName: Set snapshot filenames
 
     - script: |
