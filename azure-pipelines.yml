@@ -127,7 +127,7 @@ jobs:
         vstsFeedPublish: 'tezos-binaries'
         vstsFeedPackagePublish: 'tezos-binaries-ubuntu-azure'
         packagePublishDescription: 'Tezos binaries [$(tezosLastCommitStamp) / $(tezosLastCommit)] built on $(datetimestamp) within Azure Pipeline running on $(vmImageName).'
-        
+
     - script: |
         docker pull tezos/tezos
         docker create -ti --name tz tezos/tezos:mainnet
@@ -145,12 +145,12 @@ jobs:
     variables: 
       snapshotFileName: snapshot.bootstrap
       ramdisk: $(System.DefaultWorkingDirectory)/ramdisk
-      # experimental-rolling or full
     steps:
     - script: sudo apt-get update && sudo apt-get install -yy -qq jq dnsutils libev-dev libgmp-dev libhidapi-dev
       displayName: Install packages
+      #        curl $(fullSnapshotUrl) -o $(snapshotFileName).xz
     - script: |
-        curl $(fullSnapshotUrl) -o $(snapshotFileName).xz
+        curl -s https://api.github.com/repos/Phlogi/tezos-snapshots/releases/latest | jq -r ".assets[] | select(.name) | .browser_download_url" | grep full | xargs wget -q
       displayName: Download snapshot
       condition: eq(variables['useExternalSnapshot'], true)
 
@@ -166,11 +166,14 @@ jobs:
         # pipelineId: 12 # the build id from which to download the artifacts. For example: 1764
         buildVersionToDownload: 'latest'
         # mv -v $(Pipeline.Workspace)/snapshots-for-pipeline/snapshot-from-build.full.xz $(snapshotFileName).xz
+
     - script: |
-        ls -lah $(Pipeline.Workspace)/snapshots-for-pipeline
-        cat $(Pipeline.Workspace)/snapshots-for-pipeline/*full*.xz* > $(snapshotFileName).xz
+        ls -lah
+        cat *full*.xz* > $(snapshotFileName).xz
+        df -h
+        rm -v *full*.xz*
         ls -lah $(snapshotFileName).xz
-        latest_block=$(cat $(Pipeline.Workspace)/snapshots-for-pipeline/snapshot-latest-block.info)
+        latest_block=$(curl -s https://api.github.com/repos/Phlogi/tezos-snapshots/releases/latest | jq -r ".assets[] | select(.name) | .name" | grep full | tail -c 61 | head -c 51)
         echo "##vso[task.setvariable variable=importBlock]$latest_block"
       displayName: Prepare snapshot from artifact storage, previous build
       condition: eq(variables['useExternalSnapshot'], false)
@@ -355,20 +358,14 @@ jobs:
         flattenFolders: false 
         preserveTimestamp: false 
 
-    # rename full snapshot for next build, after copying to staging directory above
-    #         mv -v $(fullSnapshotFileName).xz snapshot-from-build.full.xz
-    - script: |
-        echo $(block) > ./snapshots/snapshot-latest-block.info
-      displayName: Rename current full snapshot to generic name for next build
-
     - script: echo $(Build.ArtifactStagingDirectory) && find $(Build.ArtifactStagingDirectory)
       displayName: '[INFO] List contents of artifact staging directory'
 
-    # TODO: only publish full snapshot here
+    # TODO: remove, using public release
     - publish: './snapshots/'
       displayName: 'Save full snapshot for next sync (internal).'
       artifact: snapshots-for-pipeline
-
+      condition: false
 
     - task: GithubRelease@0
       displayName: 'Create GitHub Release for snapshots'
