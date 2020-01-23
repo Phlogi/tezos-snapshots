@@ -38,6 +38,8 @@ jobs:
       displayName: Install fio
 
     - script: |
+        touch /mnt/foo
+        mkdir /mnt/test
         fio --name TEST --eta-newline=5s --filename=/mnt/fio-tempfile.dat --rw=read --size=500m --io_size=10g --blocksize=1024k --ioengine=libaio --fsync=10000 --iodepth=32 --direct=1 --numjobs=1 --runtime=60 --group_reporting
         fio --name TEST --eta-newline=5s --filename=/mnt/fio-tempfile.dat --rw=write --size=500m --io_size=10g --blocksize=1024k --ioengine=libaio --fsync=10000 --iodepth=32 --direct=1 --numjobs=1 --runtime=60 --group_reporting
         fio --name TEST --eta-newline=5s --filename=/mnt/fio-tempfile.dat --rw=randread --size=500m --io_size=10g --blocksize=4k --ioengine=libaio --fsync=1 --iodepth=1 --direct=1 --numjobs=1 --runtime=60 --group_reporting
@@ -65,7 +67,7 @@ jobs:
         ls -lah $(ramdisk)/foobar
         mount 
         df -h
-        touch /mnt/sdb1/foobar || true
+        touch /mnt/foobar || true
         sudo umount $(ramdisk)
         echo \"foo\" | tr -d '"'
         echo $(Agent.Name)
