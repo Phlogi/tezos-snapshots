@@ -140,13 +140,15 @@ jobs:
     # in order to find them later we save this specific build number into a config artifact
     # this will be used to find the right build having an artifact with the binaries
     - script: |
-        echo $(buildId)
-        echo $(buildId) > $(System.DefaultWorkingDirectory)/build.var
+        echo $(Build.BuildId)
+        echo $(Build.BuildId) > $(System.DefaultWorkingDirectory)/build.var
       displayName: Save current build id to file
+      condition: eq(variables['recentCommitUpdate'], true)
 
     - publish: '$(System.DefaultWorkingDirectory)/build.var'
       artifact: pipeline-config
       displayName: Save pipeline-config
+      condition: eq(variables['recentCommitUpdate'], true)
 
     - script: |
         docker pull tezos/tezos
