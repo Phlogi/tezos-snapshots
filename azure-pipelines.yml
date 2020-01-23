@@ -297,7 +297,9 @@ jobs:
         # copy back stuff from previous build
         [[ -f $(Pipeline.Workspace)/node-config/peers.json ]] && mv -v $(Pipeline.Workspace)/node-config/peers.json /home/vsts/.tezos-node/
         # add official peers
-        echo '##vso[task.setvariable variable=path]$(PATH):$(System.DefaultWorkingDirectory)/bin'
+        export PATH="$PATH:/$(System.DefaultWorkingDirectory)/bin" || true
+        echo $PATH
+        which tezos-node || true
         bash scripts/config-update-official-nodes.sh || true
       displayName: Setup tezos node, restore config from artifact
 
@@ -313,7 +315,7 @@ jobs:
         ps auxw | grep tezos-node
         du -hs /home/vsts/.tezos-node/ || true
         sleep 10
-        echo '##vso[task.setvariable variable=path]$(PATH):$(System.DefaultWorkingDirectory)/bin'
+        export PATH="$PATH:/$(System.DefaultWorkingDirectory)/bin" || true
         bash scripts/addpeers_2.0.sh || true
         echo "Waiting for node to be bootstrapped"
         ./bin/tezos-client bootstrapped
