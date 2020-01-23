@@ -40,18 +40,6 @@ jobs:
       artifact: pipeline-config
       displayName: Save pipeline-config
 
-    - task: DownloadPipelineArtifact@2
-      displayName: Download tezos binaries artifact 
-      continueOnError: true
-      inputs:
-        buildType: 'specific'
-        project: '$(System.TeamProjectId)'
-        definition: '$(System.DefinitionId)'
-        buildVersionToDownload: 'latest'
-        allowPartiallySucceededBuilds: true
-        allowFailedBuilds: false
-        artifactName: 'tezos-binaries'
-        targetPath: '$(System.DefaultWorkingDirectory)/bin'
     # - checkout: none
     - script: |
         pwd
@@ -67,6 +55,8 @@ jobs:
         touch $(ramdisk)/foobar
         ls -lah $(ramdisk)/foobar
         mount 
+        df -h
+        touch /mnt/sdb1/foobar || true
         sudo umount $(ramdisk)
         echo \"foo\" | tr -d '"'
         echo $(Agent.Name)
@@ -192,8 +182,24 @@ jobs:
       snapshotFileName: snapshot.bootstrap
       ramdisk: $(System.DefaultWorkingDirectory)/ramdisk
     steps:
+
     - script: sudo apt-get update && sudo apt-get install -yy -qq jq dnsutils libev-dev libgmp-dev libhidapi-dev
       displayName: Install packages
+
+    - task: DownloadPipelineArtifact@2
+      displayName: Download tezos binaries artifact 
+      continueOnError: true
+      inputs:
+        buildType: 'specific'
+        project: '$(System.TeamProjectId)'
+        definition: '$(System.DefinitionId)'
+        buildVersionToDownload: 'latest'
+        buildId: 382
+        allowPartiallySucceededBuilds: true
+        allowFailedBuilds: true
+        artifactName: 'tezos-binaries'
+        targetPath: '$(System.DefaultWorkingDirectory)/bin'
+
     - script: |
         curl -s https://api.github.com/repos/Phlogi/tezos-snapshots/releases/latest | jq -r ".assets[] | select(.name) | .browser_download_url" | grep full | xargs wget -q
       displayName: Download snapshot
@@ -246,19 +252,6 @@ jobs:
         vstsFeedPackage: 'tezos-binaries-ubuntu-azure'
         vstsPackageVersion: '*' # = latest version
         downloadDirectory: '$(System.DefaultWorkingDirectory)/bin'
-
-    - task: DownloadPipelineArtifact@2
-      displayName: Download tezos binaries artifact 
-      continueOnError: true
-      inputs:
-        buildType: 'specific'
-        project: '$(System.TeamProjectId)'
-        definition: '$(System.DefinitionId)'
-        buildVersionToDownload: 'latest'
-        allowPartiallySucceededBuilds: true
-        allowFailedBuilds: false
-        artifactName: 'tezos-binaries'
-        targetPath: '$(System.DefaultWorkingDirectory)/bin'
   
     - script: |
         chmod +x ./bin/*
