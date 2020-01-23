@@ -34,6 +34,22 @@ jobs:
       ramdisk: $(System.DefaultWorkingDirectory)/ramdisk
     steps: 
 
+    - script: sudo add-apt-repository ppa:avsm/ppa && sudo apt-get update && sudo apt-get remove -y --purge man-db && sudo apt-get install -yy -qq fio
+      displayName: Install fio
+      condition: eq(variables['recentCommitUpdate'], true)
+
+    - script: |
+        fio --name TEST --eta-newline=5s --filename=/mnt/fio-tempfile.dat --rw=read --size=500m --io_size=10g --blocksize=1024k --ioengine=libaio --fsync=10000 --iodepth=32 --direct=1 --numjobs=1 --runtime=60 --group_reporting
+        fio --name TEST --eta-newline=5s --filename=/mnt/fio-tempfile.dat --rw=write --size=500m --io_size=10g --blocksize=1024k --ioengine=libaio --fsync=10000 --iodepth=32 --direct=1 --numjobs=1 --runtime=60 --group_reporting
+        fio --name TEST --eta-newline=5s --filename=/mnt/fio-tempfile.dat --rw=randread --size=500m --io_size=10g --blocksize=4k --ioengine=libaio --fsync=1 --iodepth=1 --direct=1 --numjobs=1 --runtime=60 --group_reporting
+      displayName: FIO Test /mnt
+
+    - script: |
+        fio --name TEST --eta-newline=5s --filename=$(System.DefaultWorkingDirectory)/fio-tempfile.dat --rw=read --size=500m --io_size=10g --blocksize=1024k --ioengine=libaio --fsync=10000 --iodepth=32 --direct=1 --numjobs=1 --runtime=60 --group_reporting
+        fio --name TEST --eta-newline=5s --filename=$(System.DefaultWorkingDirectory)/fio-tempfile.dat --rw=write --size=500m --io_size=10g --blocksize=1024k --ioengine=libaio --fsync=10000 --iodepth=32 --direct=1 --numjobs=1 --runtime=60 --group_reporting
+        fio --name TEST --eta-newline=5s --filename=$(System.DefaultWorkingDirectory)/fio-tempfile.dat --rw=randread --size=500m --io_size=10g --blocksize=4k --ioengine=libaio --fsync=1 --iodepth=1 --direct=1 --numjobs=1 --runtime=60 --group_reporting
+      displayName: FIO Test $(System.DefaultWorkingDirectory)
+
     # - checkout: none
     - script: |
         pwd
