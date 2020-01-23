@@ -166,9 +166,11 @@ jobs:
         project: $(System.TeamProjectId)
         # pipelineId: 12 # the build id from which to download the artifacts. For example: 1764
         buildVersionToDownload: 'latest'
+        # mv -v $(Pipeline.Workspace)/snapshots-for-pipeline/snapshot-from-build.full.xz $(snapshotFileName).xz
     - script: |
         ls -lah $(Pipeline.Workspace)/snapshots-for-pipeline
-        mv -v $(Pipeline.Workspace)/snapshots-for-pipeline/snapshot-from-build.full.xz $(snapshotFileName).xz
+        cat $(Pipeline.Workspace)/snapshots-for-pipeline/*full*.xz* > $(snapshotFileName).xz
+        ls -lah $(snapshotFileName).xz
         latest_block=$(cat $(Pipeline.Workspace)/snapshots-for-pipeline/snapshot-latest-block.info)
         echo "##vso[task.setvariable variable=importBlock]$latest_block"
       displayName: Prepare snapshot from artifact storage, previous build
@@ -317,15 +319,14 @@ jobs:
         tail ./snapshots/public_peers_tezos_mainnet.list || true
       displayName: Export a list of public peers from peers.json
 
-    # TODO: Add checksum files
     - script: |
         xz -8 -T 0 $(rollingSnapshotFileName)
         xz -l $(rollingSnapshotFileName).xz
-        xz -8 -T 0 $(fullSnapshotFileName)
-        xz -l $(fullSnapshotFileName).xz
-        sha256sum ./snapshots/*.xz > ./snapshots/checksums.sha256
+        xz -8 -T 0 -c < $(fullSnapshotFileName) | split -d -b 2040M - $(fullSnapshotFileName).
+        ls -la ./snapshots/
+        sha256sum ./snapshots/*.xz* > ./snapshots/checksums.sha256 || true
         cat ./snapshots/checksums.sha256 || true
-      displayName: Compress snapshots
+      displayName: Compress snapshots and split snapshot
 
     - script: ls -la $(System.DefaultWorkingDirectory) && echo $(System.DefaultWorkingDirectory)
       displayName: '[INFO] List working directory'
@@ -336,7 +337,7 @@ jobs:
       displayName: Prepare publish rolling and full snapshot to artifact staging
       inputs:
         sourceFolder: '$(System.DefaultWorkingDirectory)/snapshots'
-        contents: '**' # recursive and everything, including the .list file for example
+        contents: '**' # recursive and everything, including the .list file
         targetFolder: $(Build.ArtifactStagingDirectory)
         cleanTargetFolder: true
         overWrite: true
@@ -347,12 +348,12 @@ jobs:
       displayName: '[INFO] List contents of artifact staging directory'
 
     # rename full snapshot for next build, after copying to staging directory above
+    #         mv -v $(fullSnapshotFileName).xz snapshot-from-build.full.xz
     - script: |
-        mv -v $(fullSnapshotFileName).xz snapshot-from-build.full.xz
         echo $(block) > snapshot-latest-block.info
       displayName: Rename current full snapshot to generic name for next build
 
-    - publish: 'snapshot-from-build.full.xz'
+    - publish: './snapshots/'
       displayName: 'Save full snapshot for next sync (internal).'
       artifact: snapshots-for-pipeline
 
