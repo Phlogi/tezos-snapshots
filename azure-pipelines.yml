@@ -33,9 +33,26 @@ jobs:
     variables:
       ramdisk: $(System.DefaultWorkingDirectory)/ramdisk
     steps: 
+    - task: DownloadPipelineArtifact@2
+      displayName: Download tezos binaries artifact 
+      continueOnError: true
+      inputs:
+        buildType: 'specific'
+        project: '$(System.TeamProjectId)'
+        definition: '$(System.DefinitionId)'
+        buildVersionToDownload: 'latest'
+        allowPartiallySucceededBuilds: true
+        allowFailedBuilds: true
+        artifactName: 'tezos-binaries'
+        targetPath: '$(System.DefaultWorkingDirectory)/bin'
     # - checkout: none
     - script: |
         pwd
+        ls -lah
+        ls -lah bin/
+        ls -lah $(System.DefaultWorkingDirectory)/bin/
+        echo $(System.DefaultWorkingDirectory)
+        echo $(Pipeline.Workspace)
         mkdir $(ramdisk)
         sudo mount -t tmpfs -o rw,size=3G tmpfs $(ramdisk)
         ls -lah $(ramdisk)
@@ -212,7 +229,7 @@ jobs:
         allowPartiallySucceededBuilds: true
         allowFailedBuilds: true
         artifactName: 'tezos-binaries'
-        targetPath: '$(Pipeline.Workspace)/bin'
+        targetPath: '$(System.DefaultWorkingDirectory)/bin'
   
     - script: |
         chmod +x ./bin/*
