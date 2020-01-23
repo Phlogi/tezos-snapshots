@@ -15,6 +15,11 @@
 ### Full 
 `curl -s https://api.github.com/repos/Phlogi/tezos-snapshots/releases/latest | jq -r ".assets[] | select(.name) | .browser_download_url" | grep full | xargs wget -q --show-progress`
 
+This will download *multiple* splitted files as the limit is 2GB per asset on github. 
+Extract them all with: 
+
+`cat mainnet.roll.* | xz -d -v -T0 > mainnet.importme`
+
 ### Block hash (e.g. for import)
 Example using the *rolling* snapshot:
 
