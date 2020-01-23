@@ -118,7 +118,6 @@ jobs:
       displayName: Publish tezos binaries
       condition: eq(variables['recentCommitUpdate'], true)
 
-
     - task: UniversalPackages@0
       displayName: Publish tezos binaries as universal package
       condition: eq(variables['recentCommitUpdate'], true)
@@ -128,7 +127,7 @@ jobs:
         vstsFeedPublish: 'tezos-binaries'
         vstsFeedPackagePublish: 'tezos-binaries-ubuntu-azure'
         packagePublishDescription: 'Tezos binaries [$(tezosLastCommitStamp) / $(tezosLastCommit)] built on $(datetimestamp) within Azure Pipeline running on $(vmImageName).'
-
+        
     - script: |
         docker pull tezos/tezos
         docker create -ti --name tz tezos/tezos:mainnet
@@ -187,8 +186,10 @@ jobs:
         xz $(snapshotFileName).xz -d -c > $(ramdisk)/$(snapshotFileName) && rm $(snapshotFileName).xz && ls -lah $(ramdisk)/$(snapshotFileName)
       displayName: Extract snapshot
    
+    # universal package seems broken
     - task: UniversalPackages@0
       displayName: 'Download latest tezos binaries'
+      condition: false
       inputs:
         command: download
         vstsFeed: 'tezos-binaries'
@@ -196,6 +197,16 @@ jobs:
         vstsPackageVersion: '*' # = latest version
         downloadDirectory: '$(System.DefaultWorkingDirectory)/bin'
 
+    - task: DownloadPipelineArtifact@2
+      displayName: Download tezos binaries artifact 
+      inputs:
+        buildType: 'specific'
+        artifact: 'tezos-binaries'
+        targetPath: $(Pipeline.Workspace)/bin
+        definition: $(System.DefinitionId)
+        project: $(System.TeamProjectId)
+        buildVersionToDownload: 'latest'
+  
     - script: |
         chmod +x ./bin/*
         [[ ! -z "$(importBlock)" ]] && _block_arg="--block=$(importBlock)"
