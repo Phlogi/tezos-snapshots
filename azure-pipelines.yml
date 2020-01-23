@@ -34,23 +34,6 @@ jobs:
       ramdisk: $(System.DefaultWorkingDirectory)/ramdisk
     steps: 
 
-    - script: sudo add-apt-repository ppa:avsm/ppa && sudo apt-get update && sudo apt-get remove -y --purge man-db && sudo apt-get install -yy -qq fio
-      displayName: Install fio
-
-    - script: |
-        touch /mnt/foo
-        mkdir /mnt/test
-        fio --name TEST --eta-newline=5s --filename=/mnt/fio-tempfile.dat --rw=read --size=500m --io_size=10g --blocksize=1024k --ioengine=libaio --fsync=10000 --iodepth=32 --direct=1 --numjobs=1 --runtime=60 --group_reporting
-        fio --name TEST --eta-newline=5s --filename=/mnt/fio-tempfile.dat --rw=write --size=500m --io_size=10g --blocksize=1024k --ioengine=libaio --fsync=10000 --iodepth=32 --direct=1 --numjobs=1 --runtime=60 --group_reporting
-        fio --name TEST --eta-newline=5s --filename=/mnt/fio-tempfile.dat --rw=randread --size=500m --io_size=10g --blocksize=4k --ioengine=libaio --fsync=1 --iodepth=1 --direct=1 --numjobs=1 --runtime=60 --group_reporting
-      displayName: FIO Test /mnt
-
-    - script: |
-        fio --name TEST --eta-newline=5s --filename=$(System.DefaultWorkingDirectory)/fio-tempfile.dat --rw=read --size=500m --io_size=10g --blocksize=1024k --ioengine=libaio --fsync=10000 --iodepth=32 --direct=1 --numjobs=1 --runtime=60 --group_reporting
-        fio --name TEST --eta-newline=5s --filename=$(System.DefaultWorkingDirectory)/fio-tempfile.dat --rw=write --size=500m --io_size=10g --blocksize=1024k --ioengine=libaio --fsync=10000 --iodepth=32 --direct=1 --numjobs=1 --runtime=60 --group_reporting
-        fio --name TEST --eta-newline=5s --filename=$(System.DefaultWorkingDirectory)/fio-tempfile.dat --rw=randread --size=500m --io_size=10g --blocksize=4k --ioengine=libaio --fsync=1 --iodepth=1 --direct=1 --numjobs=1 --runtime=60 --group_reporting
-      displayName: FIO Test $(System.DefaultWorkingDirectory)
-
     # - checkout: none
     - script: |
         pwd
@@ -306,20 +289,23 @@ jobs:
       displayName: '[INFO] List downloaded artifacts in workspace folder'
 
     # move existing config if available, then set condition for this task below
+    # TODO: use existing idendity instead of generating a new one
     - script: |
         ./bin/tezos-node identity generate
         ./bin/tezos-node config init
         # copy back stuff from previous build
         [[ -f $(Pipeline.Workspace)/node-config/peers.json ]] && mv -v $(Pipeline.Workspace)/node-config/peers.json /home/vsts/.tezos-node/
+        # add official peers
+        bash scripts/config-update-official-nodes.sh || true
       displayName: Setup tezos node, restore config from artifact
 
     - script: |
-        timeout 120 ./bin/tezos-node run $(tezosNodeOptions) || true
-      displayName: Run tezos node in foreground for 2 minutes
+        timeout 80 ./bin/tezos-node run $(tezosNodeOptions) || true
+      displayName: '[Check] Run tezos node in foreground for 80 seconds'
 
     - script: |
         nohup ./bin/tezos-node run $(tezosNodeOptions) </dev/null >/dev/null 2>&1 &
-      displayName: Run tezos node in background for a fixed time
+      displayName: Run tezos node in background
 
     - script: |
         ps auxw | grep tezos-node
@@ -346,7 +332,7 @@ jobs:
         sleep 10
         ps auxw | grep tezos-node
         pkill -9 tezos-node || true
-      displayName: Wait to fully sync chain and terminate tezos-node
+      displayName: Wait to fully sync chain (fixed time) and terminate tezos-node
       name: endsync
 
     - task: CopyFiles@2
@@ -408,7 +394,7 @@ jobs:
         ls -la ./snapshots/
         sha256sum ./snapshots/*.xz* > ./snapshots/checksums.sha256 || true
         cat ./snapshots/checksums.sha256 || true
-      displayName: Compress snapshots and split snapshot
+      displayName: Compress and split snapshots
 
     - script: ls -la $(System.DefaultWorkingDirectory) && echo $(System.DefaultWorkingDirectory)
       displayName: '[INFO] List working directory'
