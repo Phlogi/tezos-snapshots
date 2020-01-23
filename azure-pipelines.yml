@@ -33,6 +33,18 @@ jobs:
     variables:
       ramdisk: $(System.DefaultWorkingDirectory)/ramdisk
     steps: 
+    - task: DownloadPipelineArtifact@2
+      displayName: Download tezos binaries artifact 
+      continueOnError: true
+      inputs:
+        buildType: 'specific'
+        project: '$(System.TeamProjectId)'
+        definition: '$(System.DefinitionId)'
+        buildVersionToDownload: 'latest'
+        allowPartiallySucceededBuilds: true
+        allowFailedBuilds: true
+        artifactName: 'tezos-binaries'
+        targetPath: '$(Pipeline.Workspace)/bin'
     # - checkout: none
     - script: |
         pwd
@@ -194,7 +206,7 @@ jobs:
     # universal package seems broken
     - task: UniversalPackages@0
       displayName: 'Download latest tezos binaries'
-      condition: true
+      condition: false
       inputs:
         command: download
         vstsFeed: 'tezos-binaries'
@@ -204,14 +216,16 @@ jobs:
 
     - task: DownloadPipelineArtifact@2
       displayName: Download tezos binaries artifact 
-      condition: false
+      continueOnError: true
       inputs:
         buildType: 'specific'
-        artifact: 'tezos-binaries'
-        targetPath: $(Pipeline.Workspace)/bin
-        definition: $(System.DefinitionId)
-        project: $(System.TeamProjectId)
+        project: '$(System.TeamProjectId)'
+        definition: '$(System.DefinitionId)'
         buildVersionToDownload: 'latest'
+        allowPartiallySucceededBuilds: true
+        allowFailedBuilds: true
+        artifactName: 'tezos-binaries'
+        targetPath: '$(Pipeline.Workspace)/bin'
   
     - script: |
         chmod +x ./bin/*
