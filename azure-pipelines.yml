@@ -107,8 +107,9 @@ jobs:
         definition: '$(System.DefinitionId)'
         buildVersionToDownload: 'latest'
         allowPartiallySucceededBuilds: true
-        allowFailedBuilds: false
-        artifactName: 'tezos-binaries'
+        # Test only: 
+        allowFailedBuilds: true
+        artifactName: 'pipeline-config'
         targetPath: '$(System.DefaultWorkingDirectory)'
 
     - script: |
