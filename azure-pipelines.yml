@@ -42,7 +42,7 @@ jobs:
         definition: '$(System.DefinitionId)'
         buildVersionToDownload: 'latest'
         allowPartiallySucceededBuilds: true
-        allowFailedBuilds: true
+        allowFailedBuilds: false
         artifactName: 'tezos-binaries'
         targetPath: '$(System.DefaultWorkingDirectory)/bin'
     # - checkout: none
