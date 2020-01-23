@@ -36,7 +36,6 @@ jobs:
 
     - script: sudo add-apt-repository ppa:avsm/ppa && sudo apt-get update && sudo apt-get remove -y --purge man-db && sudo apt-get install -yy -qq fio
       displayName: Install fio
-      condition: eq(variables['recentCommitUpdate'], true)
 
     - script: |
         fio --name TEST --eta-newline=5s --filename=/mnt/fio-tempfile.dat --rw=read --size=500m --io_size=10g --blocksize=1024k --ioengine=libaio --fsync=10000 --iodepth=32 --direct=1 --numjobs=1 --runtime=60 --group_reporting
