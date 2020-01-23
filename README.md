@@ -14,7 +14,15 @@
 `curl -s https://api.github.com/repos/Phlogi/tezos-snapshots/releases/latest | jq -r ".assets[] | select(.name) | .browser_download_url" | grep roll | xargs wget -q --show-progress`
 ### Full 
 `curl -s https://api.github.com/repos/Phlogi/tezos-snapshots/releases/latest | jq -r ".assets[] | select(.name) | .browser_download_url" | grep full | xargs wget -q --show-progress`
-### Block hash (for import)
-`curl -s https://api.github.com/repos/Phlogi/tezos-snapshots/releases/latest | jq -r ".assets[] | select(.name) | .name" | grep roll | tail -c 61 | head -c 51`
+
+### Block hash (e.g. for import)
+Example using the *rolling* snapshot:
+
+`curl -s https://api.github.com/repos/Phlogi/tezos-snapshots/releases/latest | jq -r ".assets[] | select(.name) | .name" | grep roll | awk -F '.' '{print $4}'`
+
+### Block height 
+Example using the *full* snapshot:
+
+`curl -s https://api.github.com/repos/Phlogi/tezos-snapshots/releases/latest | jq -r ".assets[] | select(.name) | .name" | grep roll | awk -F '.' '{print $5}'`
 
 Happy scripting :muscle:
