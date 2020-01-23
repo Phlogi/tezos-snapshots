@@ -390,7 +390,9 @@ jobs:
     - script: |
         xz -8 -T 0 $(rollingSnapshotFileName)
         xz -l $(rollingSnapshotFileName).xz
-        xz -8 -T 0 -c < $(fullSnapshotFileName) | split -d -b 2040M - $(fullSnapshotFileName).
+        
+        xz -8 -T 0 -c < $(fullSnapshotFileName) | split -d -b 2040M - $(fullSnapshotFileName).xz.
+        rm -v $(fullSnapshotFileName)
         ls -la ./snapshots/
         sha256sum ./snapshots/*.xz* > ./snapshots/checksums.sha256 || true
         cat ./snapshots/checksums.sha256 || true
