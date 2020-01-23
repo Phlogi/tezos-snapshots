@@ -165,6 +165,7 @@ jobs:
     - task: UniversalPackages@0
       displayName: Publish tezos binaries as universal package
       condition: eq(variables['recentCommitUpdate'], true)
+      continueOnError: true 
       inputs:
         command: publish
         publishDirectory: '$(System.DefaultWorkingDirectory)/bin/'
