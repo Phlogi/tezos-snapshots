@@ -160,8 +160,8 @@ jobs:
         definition: '$(System.DefinitionId)'
         buildVersionToDownload: 'latest'
         allowPartiallySucceededBuilds: true
-        # Test only: 
-        allowFailedBuilds: false
+        # Needed to bootstrap. 
+        allowFailedBuilds: true
         artifactName: 'pipeline-config'
         targetPath: '$(System.DefaultWorkingDirectory)'
 
@@ -201,8 +201,8 @@ jobs:
         definition: '$(System.DefinitionId)'
         buildVersionToDownload: 'latest'
         allowPartiallySucceededBuilds: true
-        # Test only: 
-        allowFailedBuilds: false
+        # Needed to bootstrap
+        allowFailedBuilds: true
         artifactName: 'pipeline-config'
         targetPath: '$(System.DefaultWorkingDirectory)'
 
@@ -219,7 +219,7 @@ jobs:
 
     - task: DownloadPipelineArtifact@2
       displayName: Download tezos binaries artifact 
-      continueOnError: true
+      continueOnError: false
       inputs:
         buildType: 'specific'
         project: '$(System.TeamProjectId)'
@@ -227,7 +227,7 @@ jobs:
         buildVersionToDownload: 'latest'
         buildId: '$(buildNrBinaries)'
         allowPartiallySucceededBuilds: true
-        allowFailedBuilds: false
+        allowFailedBuilds: true
         artifactName: 'tezos-binaries'
         targetPath: '$(System.DefaultWorkingDirectory)/bin'
 
