@@ -30,4 +30,15 @@ Example using the *full* snapshot:
 
 `curl -s https://api.github.com/repos/Phlogi/tezos-snapshots/releases/latest | jq -r ".assets[] | select(.name) | .name" | grep roll | awk -F '.' '{print $5; exit}'`
 
+## Update your node with public peers
+```
+  peers_url=$(curl -s https://api.github.com/repos/Phlogi/tezos-snapshots/releases/latest | jq -r ".assets[] | select(.name) | .browser_download_url" | grep mainnet.list)
+  curl -sL $peers_url | while read address
+  do
+      # trust command needed if you run a private node
+      tezos-admin-client -A localhost trust address "${address}"
+      tezos-admin-client -A localhost connect address "${address}"
+  done
+  ```
+
 Happy scripting :muscle:
