@@ -23,11 +23,11 @@ Extract them all with:
 ### Block hash (e.g. for import)
 Example using the *rolling* snapshot:
 
-`curl -s https://api.github.com/repos/Phlogi/tezos-snapshots/releases/latest | jq -r ".assets[] | select(.name) | .name" | grep roll | awk -F '.' '{print $4}'`
+`curl -s https://api.github.com/repos/Phlogi/tezos-snapshots/releases/latest | jq -r ".assets[] | select(.name) | .name" | grep roll | awk -F '.' '{print $4; exit}'`
 
 ### Block height 
 Example using the *full* snapshot:
 
-`curl -s https://api.github.com/repos/Phlogi/tezos-snapshots/releases/latest | jq -r ".assets[] | select(.name) | .name" | grep roll | awk -F '.' '{print $5}'`
+`curl -s https://api.github.com/repos/Phlogi/tezos-snapshots/releases/latest | jq -r ".assets[] | select(.name) | .name" | grep roll | awk -F '.' '{print $5; exit}'`
 
 Happy scripting :muscle:
