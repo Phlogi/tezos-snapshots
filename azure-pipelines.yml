@@ -150,6 +150,29 @@ jobs:
       displayName: Save pipeline-config
       condition: eq(variables['recentCommitUpdate'], true)
 
+
+    - task: DownloadPipelineArtifact@2
+      displayName: Download pipeline config
+      condition: eq(variables['recentCommitUpdate'], false)
+      inputs:
+        buildType: 'specific'
+        project: '$(System.TeamProjectId)'
+        definition: '$(System.DefinitionId)'
+        buildVersionToDownload: 'latest'
+        allowPartiallySucceededBuilds: true
+        # Test only: 
+        allowFailedBuilds: false
+        artifactName: 'pipeline-config'
+        targetPath: '$(System.DefaultWorkingDirectory)'
+
+      # in no build, save the pipeline-config
+    - publish: '$(System.DefaultWorkingDirectory)/build.var'
+      artifact: pipeline-config
+      displayName: Save pipeline-config
+      condition: eq(variables['recentCommitUpdate'], false)
+
+
+
     - script: |
         docker pull tezos/tezos
         docker create -ti --name tz tezos/tezos:mainnet
@@ -171,7 +194,7 @@ jobs:
 
     - task: DownloadPipelineArtifact@2
       displayName: Download pipeline config
-      continueOnError: true
+      continueOnError: false
       inputs:
         buildType: 'specific'
         project: '$(System.TeamProjectId)'
@@ -187,9 +210,9 @@ jobs:
         ls -lah $(System.DefaultWorkingDirectory)
         cat $(System.DefaultWorkingDirectory)/build.var
         build=$(<$(System.DefaultWorkingDirectory)/build.var)
-        echo $build
-        echo "##vso[task.setvariable variable=buildNrBinaries]$build"
+        echo $build        
       displayName: Set build id variable from file
+      condition: eq(variables['overrideBuildId'], false)
 
     - script: sudo apt-get update && sudo apt-get install -yy -qq jq dnsutils libev-dev libgmp-dev libhidapi-dev
       displayName: Install packages
@@ -202,7 +225,7 @@ jobs:
         project: '$(System.TeamProjectId)'
         definition: '$(System.DefinitionId)'
         buildVersionToDownload: 'latest'
-        buildId: $buildNrBinaries
+        buildId: '$(buildNrBinaries)'
         allowPartiallySucceededBuilds: true
         allowFailedBuilds: false
         artifactName: 'tezos-binaries'
