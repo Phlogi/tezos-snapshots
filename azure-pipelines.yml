@@ -215,6 +215,9 @@ jobs:
 
     - script: sudo apt-get update && sudo apt-get install -yy -qq jq dnsutils libev-dev libgmp-dev libhidapi-dev
       displayName: Install packages
+    
+    - script: echo $(buildNrBinaries)
+      displayName: Check build id
 
     - task: DownloadPipelineArtifact@2
       displayName: Download tezos binaries artifact 
@@ -224,11 +227,11 @@ jobs:
         project: '$(System.TeamProjectId)'
         definition: '$(System.DefinitionId)'
         buildVersionToDownload: 'latest'
-        buildId: '$(buildNrBinaries)'
+        buildId: $(buildNrBinaries)
         allowPartiallySucceededBuilds: true
         allowFailedBuilds: true
         artifactName: 'tezos-binaries'
-        targetPath: '$(System.DefaultWorkingDirectory)/bin'
+        path: '$(System.DefaultWorkingDirectory)/bin'
 
     - script: |
         curl -s https://api.github.com/repos/Phlogi/tezos-snapshots/releases/latest | jq -r ".assets[] | select(.name) | .browser_download_url" | grep full | xargs wget -q
