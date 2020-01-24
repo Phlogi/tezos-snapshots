@@ -213,8 +213,7 @@ jobs:
       displayName: Set build id variable from file
       condition: eq(variables['overrideBuildId'], false)
 
-    - script: sudo apt-get update && sudo apt-get install -yy -qq jq dnsutils libev-dev libgmp-dev libhidapi-dev
-      displayName: Install packages
+
     
     - script: echo $(buildNrBinaries)
       displayName: Check build id
@@ -224,14 +223,17 @@ jobs:
       continueOnError: false
       inputs:
         buildType: 'specific'
+        runId: $(buildNrBinaries)
         project: '$(System.TeamProjectId)'
         definition: '$(System.DefinitionId)'
-        buildVersionToDownload: 'latest'
-        buildId: $(buildNrBinaries)
+        buildVersionToDownload: 'specific'
         allowPartiallySucceededBuilds: true
         allowFailedBuilds: true
         artifactName: 'tezos-binaries'
         path: '$(System.DefaultWorkingDirectory)/bin'
+        
+    - script: sudo apt-get update && sudo apt-get install -yy -qq jq dnsutils libev-dev libgmp-dev libhidapi-dev
+      displayName: Install packages
 
     - script: |
         curl -s https://api.github.com/repos/Phlogi/tezos-snapshots/releases/latest | jq -r ".assets[] | select(.name) | .browser_download_url" | grep full | xargs wget -q
