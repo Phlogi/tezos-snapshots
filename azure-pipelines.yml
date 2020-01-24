@@ -165,13 +165,11 @@ jobs:
         artifactName: 'pipeline-config'
         targetPath: '$(System.DefaultWorkingDirectory)'
 
-      # in no build, save the pipeline-config
+      # if no build, save the pipeline-config
     - publish: '$(System.DefaultWorkingDirectory)/build.var'
       artifact: pipeline-config
       displayName: Save pipeline-config
       condition: eq(variables['recentCommitUpdate'], false)
-
-
 
     - script: |
         docker pull tezos/tezos
@@ -210,7 +208,8 @@ jobs:
         ls -lah $(System.DefaultWorkingDirectory)
         cat $(System.DefaultWorkingDirectory)/build.var
         build=$(<$(System.DefaultWorkingDirectory)/build.var)
-        echo $build        
+        echo "##vso[task.setvariable variable=buildNrBinaries]$build"
+        echo $build
       displayName: Set build id variable from file
       condition: eq(variables['overrideBuildId'], false)
 
