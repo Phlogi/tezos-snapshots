@@ -83,6 +83,7 @@ jobs:
 
     - task: PowerShell@2
       displayName: Set date time stamp variable
+      condition: false
       inputs:
         targetType: 'inline'
         script: |
@@ -213,10 +214,8 @@ jobs:
       displayName: Set build id variable from file
       condition: eq(variables['overrideBuildId'], false)
 
-
-    
-    - script: echo $(buildNrBinaries)
-      displayName: Check build id
+    - script: sudo apt-get update && sudo apt-get install -yy -qq jq dnsutils libev-dev libgmp-dev libhidapi-dev
+      displayName: Install packages
 
     - task: DownloadPipelineArtifact@2
       displayName: Download tezos binaries artifact 
@@ -231,9 +230,6 @@ jobs:
         allowFailedBuilds: true
         artifactName: 'tezos-binaries'
         path: '$(System.DefaultWorkingDirectory)/bin'
-        
-    - script: sudo apt-get update && sudo apt-get install -yy -qq jq dnsutils libev-dev libgmp-dev libhidapi-dev
-      displayName: Install packages
 
     - script: |
         curl -s https://api.github.com/repos/Phlogi/tezos-snapshots/releases/latest | jq -r ".assets[] | select(.name) | .browser_download_url" | grep full | xargs wget -q
