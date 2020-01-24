@@ -73,9 +73,8 @@ foundation_nodes () {
 
 public_github_nodes () {
   local peers_url=$(curl -s https://api.github.com/repos/Phlogi/tezos-snapshots/releases/latest | jq -r ".assets[] | select(.name) | .browser_download_url" | grep mainnet.list)
-  curl -sL $peers_url | while read i
+  curl -sL $peers_url | while read address
   do
-      address=$(echo "${i}" | sed 's/::ffff://')
       echo -e "Trust and connect ${YELLOW}public peer${NC} $address..."
       trust_connect "${address}"
   done
