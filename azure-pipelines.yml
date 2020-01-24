@@ -179,7 +179,7 @@ jobs:
         buildVersionToDownload: 'latest'
         allowPartiallySucceededBuilds: true
         # Test only: 
-        allowFailedBuilds: true
+        allowFailedBuilds: false
         artifactName: 'pipeline-config'
         targetPath: '$(System.DefaultWorkingDirectory)'
 
@@ -204,8 +204,7 @@ jobs:
         buildVersionToDownload: 'latest'
         buildId: $buildNrBinaries
         allowPartiallySucceededBuilds: true
-        # TODO:
-        allowFailedBuilds: true
+        allowFailedBuilds: false
         artifactName: 'tezos-binaries'
         targetPath: '$(System.DefaultWorkingDirectory)/bin'
 
@@ -290,9 +289,9 @@ jobs:
       displayName: '[INFO] List downloaded artifacts in workspace folder'
 
     # move existing config if available, then set condition for this task below
-    # TODO: use existing idendity instead of generating a new one
     - script: |
-        ./bin/tezos-node identity generate
+        [[ -f $(Pipeline.Workspace)/node-config/identity.json ]] && mv -v $(Pipeline.Workspace)/node-config/identity.json /home/vsts/.tezos-node/
+        [[ ! -f /home/vsts/.tezos-node/identity.json ]] && ./bin/tezos-node identity generate
         ./bin/tezos-node config init
         # copy back stuff from previous build
         [[ -f $(Pipeline.Workspace)/node-config/peers.json ]] && mv -v $(Pipeline.Workspace)/node-config/peers.json /home/vsts/.tezos-node/
