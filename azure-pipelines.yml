@@ -2,7 +2,7 @@ trigger:
 - master
 
 schedules:
-- cron: "30 3 * * *"
+- cron: "30 2 * * *"
   displayName: Daily early morning run
   branches:
     include:
