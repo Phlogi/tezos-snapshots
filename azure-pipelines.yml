@@ -39,9 +39,12 @@ jobs:
         pwd
         ls -lah
         df -h
-        touch /mnt/foobar || true
-        ls -la /mnt/
-        ls -lah /mnt
+        sudo touch /mnt/foobar || true
+        sudo mkdir /mnt/user_tmp || true
+        ls -lah /mnt/user_tmp || true
+        sudo chown vsts /mnt/user_tmp || true
+        touch /mnt/user_tmp/foobar || true
+        ls -lah /mnt/user_tmp/ || true
         find /mnt
         echo $(System.DefaultWorkingDirectory)
         echo $(Pipeline.Workspace)
