@@ -38,6 +38,9 @@ jobs:
     - script: |
         pwd
         ls -lah
+        df -h
+        touch /mnt/foobar || true
+        ls -la /mnt/
         ls -lah /mnt
         find /mnt
         echo $(System.DefaultWorkingDirectory)
@@ -49,8 +52,6 @@ jobs:
         touch $(ramdisk)/foobar
         ls -lah $(ramdisk)/foobar
         mount 
-        df -h
-        touch /mnt/foobar || true
         sudo umount $(ramdisk)
         echo \"foo\" | tr -d '"'
         echo $(Agent.Name)
