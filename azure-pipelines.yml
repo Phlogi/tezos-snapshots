@@ -191,7 +191,7 @@ jobs:
     timeoutInMinutes: 360
     displayName: Download, import snapshot, setup node and run
     variables: 
-      snapshotFileName: /mnt/user_tmp/snapshot.bootstrap
+      snapshotFileName: snapshot.bootstrap
       snapshotsDir: /mnt/user_tmp/snapshots/
       ramdisk: $(System.DefaultWorkingDirectory)/ramdisk
     steps:
@@ -264,18 +264,18 @@ jobs:
 
     - script: |
         ls -lah
-        cat *full*.xz* > $(snapshotFileName).xz
+        cat *full*.xz* > $(snapshotsDir)$(snapshotFileName).xz
         df -h
         rm -v *full*.xz*
-        ls -lah $(snapshotFileName).xz
+        ls -lah $(snapshotsDir)$(snapshotFileName).xz
         latest_block=$(curl -s https://api.github.com/repos/Phlogi/tezos-snapshots/releases/latest | jq -r ".assets[] | select(.name) | .name" | grep full | awk -F '.' '{print $4; exit}')
         echo "##vso[task.setvariable variable=importBlock]$latest_block"
       displayName: Prepare snapshot
       condition: eq(variables['useExternalSnapshot'], true)
 
     - script: |
-        xz -l $(snapshotFileName).xz
-        sb=$(xz --robot -l $(snapshotFileName).xz | grep file |  awk '{print $5}')
+        xz -l $(snapshotsDir)$(snapshotFileName).xz
+        sb=$(xz --robot -l $(snapshotsDir)$(snapshotFileName).xz | grep file |  awk '{print $5}')
         let sb+=1024
         mkdir $(ramdisk)
         free -m
@@ -283,7 +283,7 @@ jobs:
         sudo chmod 777 $(ramdisk)
         sudo mount | grep $(ramdisk)
         free -m
-        xz $(snapshotFileName).xz -d -c > $(ramdisk)/$(snapshotFileName) && rm $(snapshotFileName).xz && ls -lah $(ramdisk)/$(snapshotFileName)
+        xz $(snapshotsDir)$(snapshotFileName).xz -d -c > $(ramdisk)/$(snapshotFileName) && rm $(snapshotsDir)$(snapshotFileName).xz && ls -lah $(ramdisk)/$(snapshotFileName)
       displayName: Extract snapshot into ramdisk
    
     # universal package seems broken
