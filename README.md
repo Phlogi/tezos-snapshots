@@ -18,7 +18,7 @@
 This will download *multiple* splitted files as the limit is 2GB per asset on github. 
 Extract them all with: 
 
-`cat mainnet.roll.* | xz -d -v -T0 > mainnet.importme`
+`cat mainnet.full.* | xz -d -v -T0 > mainnet.importme`
 
 ### Block hash (e.g. for import)
 Example using the *rolling* snapshot:
