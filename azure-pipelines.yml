@@ -73,6 +73,21 @@ jobs:
         uname -r
       displayName: Test commands
 
+    - task: GithubRelease@0
+      displayName: 'Create GitHub Release for snapshots'
+      inputs:
+        isPreRelease: true
+        title: 'Test Release '
+        gitHubConnection: phlogi-personal
+        repositoryName: phlogi/tezos-snapshots
+        tagSource: manual
+        releaseNotesSource: input
+        releaseNotes: bla bla
+        addChangeLog: false
+        tag: $(Build.BuildNumber)
+        assets: |
+            /mnt/user_tmp/foobar
+            /home/vsts/work/1/s/Readme.md
 
 ### JOB ###
   - job: Build
