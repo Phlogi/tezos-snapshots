@@ -77,7 +77,7 @@ jobs:
       displayName: 'Create GitHub Release for snapshots'
       inputs:
         isPreRelease: true
-        title: 'Test Release '
+        title: 'Test Release'
         gitHubConnection: phlogi-personal
         repositoryName: phlogi/tezos-snapshots
         tagSource: manual
@@ -86,8 +86,7 @@ jobs:
         addChangeLog: false
         tag: $(Build.BuildNumber)
         assets: |
-            /mnt/user_tmp/foobar
-            /home/vsts/work/1/s/Readme.md
+            /mnt/user_tmp/*
 
 ### JOB ###
   - job: Build
