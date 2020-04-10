@@ -91,7 +91,7 @@ jobs:
 ### JOB ###
   - job: Build
     displayName: Build and publish tezos binaries
-    condition: and(always(), eq(variables['Build.Reason'], 'Schedule'))
+    #condition: and(always(), eq(variables['Build.Reason'], 'Schedule'))
     variables:
       tezosLastCommit: unknown
       tezosLastCommitStamp: unknown
@@ -202,7 +202,7 @@ jobs:
 
 ### JOB ###
   - job: getUpdatedSnapshot
-    condition: and(always(), eq(variables['Build.Reason'], 'Schedule'))
+    #condition: and(always(), eq(variables['Build.Reason'], 'Schedule'))
     timeoutInMinutes: 360
     displayName: Download, import snapshot, setup node and run
     variables: 
@@ -458,6 +458,7 @@ jobs:
 
     # Publish both snapshots
     - task: CopyFiles@2
+      condition: false
       displayName: Prepare publish rolling and full snapshot to artifact staging
       inputs:
         sourceFolder: '$(snapshotsDir)'
@@ -468,8 +469,8 @@ jobs:
         flattenFolders: false 
         preserveTimestamp: false 
 
-    - script: echo $(Build.ArtifactStagingDirectory) && find $(Build.ArtifactStagingDirectory)
-      displayName: '[INFO] List contents of artifact staging directory'
+    - script: echo $(snapshotsDir) && find $(snapshotsDir)
+      displayName: '[INFO] List contents of snapshot directory'
 
     - task: GithubRelease@0
       displayName: 'Create GitHub Release for snapshots'
@@ -483,5 +484,6 @@ jobs:
         releaseNotes: Rolling and full snapshots up to level $(blockLevel) at $(blockTimeStamp) and block $(block). Current list of public tezos peers. 
         addChangeLog: false
         tag: $(Build.BuildNumber)
+        # directory has the files without subfolders
         assets: |
-            $(Build.ArtifactStagingDirectory)/**
+            $(snapshotsDir)/*
