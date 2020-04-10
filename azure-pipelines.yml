@@ -82,11 +82,11 @@ jobs:
         repositoryName: phlogi/tezos-snapshots
         tagSource: manual
         releaseNotesSource: input
-        releaseNotes: bla bla
+        releaseNotes: 'bla bla'
         addChangeLog: false
         tag: $(Build.BuildNumber)
         assets: |
-            /mnt/user_tmp/*
+            /home/vsts/work/1/s/*.md
 
 ### JOB ###
   - job: Build
