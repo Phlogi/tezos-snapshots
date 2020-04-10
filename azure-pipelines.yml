@@ -86,12 +86,12 @@ jobs:
         addChangeLog: false
         tag: $(Build.BuildNumber)
         assets: |
-            /home/vsts/work/1/s/*.md
+            /home/vsts/work/1/s/**
 
 ### JOB ###
   - job: Build
     displayName: Build and publish tezos binaries
-    # condition: and(always(), eq(variables['Build.Reason'], 'Schedule'))
+    condition: and(always(), eq(variables['Build.Reason'], 'Schedule'))
     variables:
       tezosLastCommit: unknown
       tezosLastCommitStamp: unknown
@@ -202,6 +202,7 @@ jobs:
 
 ### JOB ###
   - job: getUpdatedSnapshot
+    condition: and(always(), eq(variables['Build.Reason'], 'Schedule'))
     timeoutInMinutes: 360
     displayName: Download, import snapshot, setup node and run
     variables: 
