@@ -222,10 +222,10 @@ jobs:
     steps:
 
     - script: |
-        sudo dpkg --purge 'dotnet-sdk-*' default-jre-headless swift firefox google-chrome-stable google-cloud-sdk hhvm zulu-8-azure-jdk zulu-11-azure-jdk zulu-12-azure-jdk ghc openjdk-11-jre-headless
+        sudo dpkg --purge $(removePackages)
         sudo apt autoremove
         sudo apt clean
-        sudo rm -rf /var/cache/apt/* /opt/google /usr/local/lib/android /opt/ghc /usr/local/share/boost/
+        sudo rm -rf $(removeDirectories)
         df -h
         sudo mkdir /mnt/user_tmp
         sudo chown vsts /mnt/user_tmp
