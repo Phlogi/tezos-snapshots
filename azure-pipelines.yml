@@ -424,7 +424,7 @@ jobs:
 
     - script: | 
         echo $(block) && echo $(blockLevel) && echo $(blockTimeStamp)
-        # mkdir ./snapshots
+        mkdir -v $(System.DefaultWorkingDirectory)/results
       displayName: Prepare for snapshot exports
 
     - task: PowerShell@2
