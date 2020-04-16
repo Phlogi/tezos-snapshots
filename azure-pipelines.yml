@@ -42,7 +42,7 @@ jobs:
         #sudo du -Shx / | sort -rh | head -15
         #sudo dpkg-query -Wf '${Installed-Size}\t${Package}\n' | sort -n
         df -h
-        sudo apt-get remove --purge julia swift google-chrome-stable google-cloud-sdk hhvm zulu-11-azure-jdk zulu-12-azure-jdk ghc openjdk-11-jre-headless dotnet-sdk
+        sudo snap remove dotnet-sdk julia
         sudo rm -rf /var/cache/apt/* /opt/google /usr/local/lib/android
         df -h
         pwd
@@ -220,12 +220,13 @@ jobs:
     steps:
 
     - script: |
+        sudo apt-get remove --purge swift google-chrome-stable google-cloud-sdk hhvm zulu-11-azure-jdk zulu-12-azure-jdk ghc openjdk-11-jre-headless dotnet-sdk
         sudo mkdir /mnt/user_tmp
         sudo chown vsts /mnt/user_tmp
         touch /mnt/user_tmp/vsts_can_write_stuff_here.yes
         mkdir '$(snapshotsDir)'
         ls -lah /mnt/user_tmp/
-      displayName: Setup tmp directory on sdb mounted in /mnt for user vsts
+      displayName: Clean VM and setup tmp directory on sdb mounted in /mnt for user vsts
 
     - task: DownloadPipelineArtifact@2
       displayName: Download pipeline config
