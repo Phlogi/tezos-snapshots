@@ -320,7 +320,7 @@ jobs:
         ./bin/tezos-node snapshot import $(ramdisk)/$(snapshotFileName) $(tezosNodeImportOptions) ${_block_arg}
       displayName: Import snapshot
 
-    - script: free -m && sudo umount $(ramdisk) && mount | grep tmpfs && free -m
+    - script: free -m && sudo umount $(ramdisk) && mount | grep tmpfs && free -m && df -h
       displayName: Remove ramdisk
 
     - task: DownloadPipelineArtifact@2
