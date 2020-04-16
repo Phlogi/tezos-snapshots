@@ -41,6 +41,7 @@ jobs:
         echo "directories:"
         sudo du -Shx / | sort -rh | head -15
         sudo dpkg-query -Wf '${Installed-Size}\t${Package}\n' | sort -rn | head -n 20
+        sudo dpkg --purge boost swift google-chrome-stable google-cloud-sdk hhvm zulu-11-azure-jdk zulu-12-azure-jdk ghc openjdk-11-jre-headless
         sudo apt remove dotnet-sdk-3.1
         df -h
         #sudo snap remove dotnet-sdk julia
@@ -220,7 +221,7 @@ jobs:
     steps:
 
     - script: |
-        sudo apt-get remove --purge swift google-chrome-stable google-cloud-sdk hhvm zulu-11-azure-jdk zulu-12-azure-jdk ghc openjdk-11-jre-headless dotnet-sdk
+        sudo dpkg --purge boost swift google-chrome-stable google-cloud-sdk hhvm zulu-11-azure-jdk zulu-12-azure-jdk ghc openjdk-11-jre-headless
         sudo rm -rf /var/cache/apt/* /opt/google /usr/local/lib/android &
         sudo mkdir /mnt/user_tmp
         sudo chown vsts /mnt/user_tmp
