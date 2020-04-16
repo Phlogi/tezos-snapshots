@@ -402,7 +402,7 @@ jobs:
         sleep 10
         ps auxw | grep tezos-node
         pkill -9 tezos-node || true
-      displayName: Wait to fully sync chain (fixed time) and terminate tezos-node
+      displayName: Extract tip of bootstrapped and synced chain, terminate tezos-node
       name: endsync
 
     - task: CopyFiles@2
@@ -455,7 +455,7 @@ jobs:
     - script: |
         jq -jr '.[] | select(.last_established_connection != null) | .last_established_connection | .[0] | "[",.addr,"]:",.port,"\n"' /home/vsts/.tezos-node/peers.json > $(System.DefaultWorkingDirectory)/results/public_peers_tezos_mainnet.list
         tail $(System.DefaultWorkingDirectory)/results/public_peers_tezos_mainnet.list || true
-      displayName: Export a list of public peers from peers.json
+      displayName: Export a list of public peers from peers.json file
 
     - script: |
         xz -8 -T 0 $(rollingSnapshotFileName)
