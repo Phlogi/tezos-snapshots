@@ -438,8 +438,8 @@ jobs:
           Write-Host "##vso[task.setvariable variable=datetimestamp]$date"
   
     - script: |
-        echo "##vso[task.setvariable variable=rollingSnapshotFileName]$(snapshotsDir)mainnet.roll.$(date +%F_%H-%M).$(block).$(blockLevel).chain"
-        echo "##vso[task.setvariable variable=fullSnapshotFileName]$(snapshotsDir)mainnet.full.$(date +%F_%H-%M).$(block).$(blockLevel).chain"
+        echo "##vso[task.setvariable variable=rollingSnapshotFileName]$(System.DefaultWorkingDirectory)/results/mainnet.roll.$(date +%F_%H-%M).$(block).$(blockLevel).chain"
+        echo "##vso[task.setvariable variable=fullSnapshotFileName]$(System.DefaultWorkingDirectory)/results/mainnet.full.$(date +%F_%H-%M).$(block).$(blockLevel).chain"
       displayName: Set snapshot filenames
 
     - script: |
@@ -453,8 +453,8 @@ jobs:
       displayName: Export full snapshot
 
     - script: |
-        jq -jr '.[] | select(.last_established_connection != null) | .last_established_connection | .[0] | "[",.addr,"]:",.port,"\n"' /home/vsts/.tezos-node/peers.json > $(snapshotsDir)public_peers_tezos_mainnet.list
-        tail '$(snapshotsDir)'public_peers_tezos_mainnet.list || true
+        jq -jr '.[] | select(.last_established_connection != null) | .last_established_connection | .[0] | "[",.addr,"]:",.port,"\n"' /home/vsts/.tezos-node/peers.json > $(System.DefaultWorkingDirectory)/results/public_peers_tezos_mainnet.list
+        tail $(System.DefaultWorkingDirectory)/results/public_peers_tezos_mainnet.list || true
       displayName: Export a list of public peers from peers.json
 
     - script: |
@@ -463,13 +463,10 @@ jobs:
         
         xz -8 -T 0 -c < $(fullSnapshotFileName) | split -d -b 2040M - $(fullSnapshotFileName).xz.
         rm -v $(fullSnapshotFileName)
-        ls -la $(snapshotsDir)
-        sha256sum $(snapshotsDir)*.xz* > $(snapshotsDir)checksums.sha256 || true
-        cat $(snapshotsDir)checksums.sha256 || true
+        ls -la $(System.DefaultWorkingDirectory)/results/
+        sha256sum $(System.DefaultWorkingDirectory)/results/*.xz* > $(System.DefaultWorkingDirectory)/results/checksums.sha256 || true
+        cat $(System.DefaultWorkingDirectory)/results/checksums.sha256 || true
       displayName: Compress and split snapshots
-
-    - script: ls -la $(System.DefaultWorkingDirectory) && echo $(System.DefaultWorkingDirectory)
-      displayName: '[INFO] List working directory'
 
     # Publish both snapshots
     - task: CopyFiles@2
@@ -484,8 +481,8 @@ jobs:
         flattenFolders: false 
         preserveTimestamp: false 
 
-    - script: echo $(snapshotsDir) && find $(snapshotsDir)
-      displayName: '[INFO] List contents of snapshot directory'
+    - script: echo $(System.DefaultWorkingDirectory)/results/ && find $(System.DefaultWorkingDirectory)/results/
+      displayName: '[INFO] List contents of results directory'
 
     - task: GithubRelease@0
       displayName: 'Create GitHub Release for snapshots'
@@ -501,4 +498,4 @@ jobs:
         tag: $(Build.BuildNumber)
         # directory has the files without subfolders
         assets: |
-            $(snapshotsDir)/*
+            $(System.DefaultWorkingDirectory)/results/*
