@@ -36,6 +36,10 @@ jobs:
 
     # - checkout: none
     - script: |
+        echo "largest files on /"
+        sudo find / -xdev -type f -exec du -Sh {} + | sort -rh | head -n 15
+        echo "directories:"
+        sudo du -Shx / | sort -rh | head -15
         pwd
         ls -lah
         df -h
