@@ -43,6 +43,7 @@ jobs:
         sudo dpkg-query -Wf '${Installed-Size}\t${Package}\n' | sort -n
         df -h
         sudo rm -rf /var/cache/apt/* /opt/google /usr/local/lib/android
+        apt-get remove --purge packagename julia swift ghc
         df -h
         pwd
         ls -lah
