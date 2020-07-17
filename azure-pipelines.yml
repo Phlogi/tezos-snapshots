@@ -340,6 +340,7 @@ jobs:
 
     - task: DownloadPipelineArtifact@2
       displayName: Download tezos config from previous build
+      continueOnError: true
       inputs:
         buildType: 'specific'
         artifact: 'node-config'
