@@ -384,10 +384,10 @@ jobs:
         export PATH="$PATH:/$(System.DefaultWorkingDirectory)/bin" || true
         bash scripts/addpeers_2.0.sh || true
         echo "Waiting for node to be bootstrapped"
-        ./bin/tezos-client bootstrapped
+        timeout $(chainBootstrapDurationSeconds) ./bin/tezos-client bootstrapped
         ./bin/tezos-client get timestamp
         du -hs /home/vsts/.tezos-node/ || true
-      displayName: Run add peers script, wait for node to be bootstrapped
+      displayName: Run add peers script, wait for node to be bootstrapped or timeout after 3.5 hours
 
     - script: |
         sleep $(chainSyncDurationSeconds)
