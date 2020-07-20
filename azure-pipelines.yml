@@ -343,6 +343,7 @@ jobs:
       continueOnError: true
       inputs:
         buildType: 'specific'
+        allowPartiallySucceededBuilds: true
         artifact: 'node-config'
         targetPath: $(Pipeline.Workspace)/node-config
         definition: $(System.DefinitionId)
