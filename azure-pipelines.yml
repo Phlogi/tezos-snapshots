@@ -346,8 +346,8 @@ jobs:
         allowPartiallySucceededBuilds: true
         artifact: 'node-config'
         targetPath: $(Pipeline.Workspace)/node-config
-        definition: $(System.DefinitionId)
-        project: $(System.TeamProjectId)
+        #definition: $(System.DefinitionId)
+        #project: $(System.TeamProjectId)
         # pipelineId: 12 # the build id from which to download the artifacts. For example: 1764
         buildVersionToDownload: 'latest'
 
