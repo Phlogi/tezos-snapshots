@@ -1,18 +1,17 @@
 #!/bin/bash
-
+# Original source: https://gist.github.com/utdrmac/2125a8514960e163837e86bc934f19b6
+#
 # This is a helper script for adding more peers to an already
 # running tezos-node. It first queries for, and adds all
 # foundation nodes, then queries tzscan's API for more peers and
 # adds them as well.
+# 
 #
 # The tezos-admin-client binary will output 'Error' messages in
 # most cases, even when already connected to a peer.
 #
 # Be sure to install jq and configure the TZPATH variable below
 # [yum|apt] install jq
-#
-# If you found this script helpful, send a tip to:
-# - https://tezosbakery.ch/ tz1fZ767VDbqx4DeKiFswPSHh513f51mKEUZ (updated, fixed version)
 #
 # Assumptions: 
 # - tezos commands must be in the users PATH directory
