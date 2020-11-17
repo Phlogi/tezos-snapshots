@@ -1,13 +1,13 @@
 trigger:
 - master
 
-schedules:
-- cron: "30 2 */3 * *"
-  displayName: Daily early morning run
-  branches:
-    include:
-    - master
-  always: true
+#schedules:
+#- cron: "30 2 */3 * *"
+#  displayName: Daily early morning run
+#  branches:
+#    include:
+#    - master
+#  always: true
 
 variables:
   vmImageName: 'ubuntu-18.04'
